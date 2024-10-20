@@ -138,3 +138,12 @@ Web Scraping (for early data collection): Python with BeautifulSoup or Scrapy to
 
 Hosting: Cloudflare Pages (for frontend) and Workers (for backend).
 
+## Development
+```
+npm install
+npm run dev
+```
+
+```
+npm run deploy
+```

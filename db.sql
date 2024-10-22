@@ -1,0 +1,15 @@
+PRAGMA defer_foreign_keys=TRUE;
+DROP TABLE IF EXISTS youtube;
+CREATE TABLE youtube (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  handle TEXT NOT NULL UNIQUE
+);
+INSERT INTO youtube VALUES(0,'UCTVgSQTwWpHWIXC6EOh8vWw');
+DROP TABLE IF EXISTS creator;
+CREATE TABLE creator (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  link TEXT NOT NULL,
+  youtube INTEGER NOT NULL,
+  FOREIGN KEY (youtube) REFERENCES youtube(id) ON DELETE CASCADE
+);
+INSERT INTO creator VALUES(0,'https://www.patreon.com/ysub',0);

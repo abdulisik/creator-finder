@@ -5,6 +5,13 @@ type Bindings = {
   DB: D1Database;
 };
 
+enum Platform {
+  YouTube = 'youtube',
+  Patreon = 'patreon',
+  Other = 'other_links',
+}
+
+
 // Layout Component for Reusability
 const Layout = ({ children }: { children: any }) => (
   <html lang='en'>
@@ -122,37 +129,42 @@ const HomeView = () => (
 // Route to Serve Home View
 app.get('/', (c) => c.html(<HomeView />));
 
-// Route to Handle Adding Creators
-app.post('/add', async (c) => {
-  const { name, youtubeHandle, youtubeLink, discoveredOn } =
-    await c.req.parseBody();
+async function addCreator(
+  db: D1Database,
+  name: string,
+  platform: Platform,
+  handle: string,
+  link: string,
+  discoveredOn: string
+) {
   try {
-    // Insert Creator
-    const creatorInsert = await c.env.DB.prepare(
+    // Insert the creator and ensure ID is returned
+    const creatorResult = await db.prepare(
       'INSERT INTO creators (name, discovered_on) VALUES (?, ?) RETURNING id'
-    )
-      .bind(name, discoveredOn)
-      .first();
+    ).bind(name, discoveredOn).first();
 
-    if (!creatorInsert) throw new Error('Creator insertion failed.');
+    if (!creatorResult) {
+      throw new Error('Creator insertion failed.');
+    }
+    const creatorId = creatorResult.id;
 
-    const creatorId = creatorInsert.id;
+    // Insert the platform-specific data
+    const platformInsert = await db.prepare(
+      `INSERT INTO ${platform} (creator_id, handle, link, discovered_on) VALUES (?, ?, ?, ?)`
+    ).bind(creatorId, handle, link, discoveredOn).run();
 
-    // Insert YouTube Channel
-    const youtubeInsert = await c.env.DB.prepare(
-      'INSERT INTO youtube (creator_id, handle, link, discovered_on) VALUES (?, ?, ?, ?)'
-    )
-      .bind(creatorId, youtubeHandle, youtubeLink, discoveredOn)
-      .run();
+    if (!platformInsert.success) {
+      throw new Error(`${platform} insertion failed.`);
+    }
 
-    if (!youtubeInsert.success) throw new Error('YouTube insertion failed.');
-
-    return c.redirect('/');
+    return { success: true };
   } catch (error) {
     console.error('Error inserting data:', error);
-    return c.json({ error: error.message || 'Unknown error' }, 500);
+    return { error: error.message || 'Unknown error' };
   }
-});
+}
+
+
 
 // Search Route
 app.get('/search/:query', async (c) => {

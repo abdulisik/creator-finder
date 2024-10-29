@@ -124,32 +124,33 @@ app.get('/', (c) => c.html(<HomeView />));
 
 // Route to Handle Adding Creators
 app.post('/add', async (c) => {
-  const { link, youtubeHandle } = await c.req.parseBody();
+  const { name, youtubeHandle, youtubeLink, discoveredOn } =
+    await c.req.parseBody();
   try {
-    const youtubeInsert = await c.env.DB.prepare(
-      'INSERT INTO youtube (handle) VALUES (?) RETURNING id'
+    // Insert Creator
+    const creatorInsert = await c.env.DB.prepare(
+      'INSERT INTO creators (name, discovered_on) VALUES (?, ?) RETURNING id'
     )
-      .bind(youtubeHandle)
+      .bind(name, discoveredOn)
       .first();
 
-    if (!youtubeInsert) throw new Error('YouTube handle insertion failed.');
+    if (!creatorInsert) throw new Error('Creator insertion failed.');
 
-    const youtubeId = youtubeInsert.id;
-    const creatorInsert = await c.env.DB.prepare(
-      'INSERT INTO creator (link, youtube) VALUES (?, ?)'
+    const creatorId = creatorInsert.id;
+
+    // Insert YouTube Channel
+    const youtubeInsert = await c.env.DB.prepare(
+      'INSERT INTO youtube (creator_id, handle, link, discovered_on) VALUES (?, ?, ?, ?)'
     )
-      .bind(link, youtubeId)
+      .bind(creatorId, youtubeHandle, youtubeLink, discoveredOn)
       .run();
 
-    if (!creatorInsert.success) throw new Error('Creator insertion failed.');
+    if (!youtubeInsert.success) throw new Error('YouTube insertion failed.');
 
     return c.redirect('/');
   } catch (error) {
     console.error('Error inserting data:', error);
-    return c.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      500
-    );
+    return c.json({ error: error.message || 'Unknown error' }, 500);
   }
 });
 
@@ -158,10 +159,10 @@ app.get('/search/:query', async (c) => {
   try {
     const query = c.req.param('query') || '';
     const results = await c.env.DB.prepare(
-      `SELECT creator.link, youtube.handle
-       FROM creator
-       JOIN youtube ON creator.youtube = youtube.id
-       WHERE youtube.handle LIKE ? OR creator.link LIKE ?`
+      `SELECT creators.name, youtube.handle, youtube.link
+       FROM creators
+       LEFT JOIN youtube ON creators.id = youtube.creator_id
+       WHERE creators.name LIKE ? OR youtube.handle LIKE ?`
     )
       .bind(`%${query}%`, `%${query}%`)
       .all();
@@ -169,13 +170,11 @@ app.get('/search/:query', async (c) => {
     if (!results.results || results.results.length === 0) {
       return c.json({ message: 'No creators found.' }, 404);
     }
+
     return c.json(results.results);
   } catch (e) {
     console.error(e);
-    return c.json(
-      { error: e instanceof Error ? e.message : `Unknown error: ${e}` },
-      500
-    );
+    return c.json({ error: e.message || `Unknown error: ${e}` }, 500);
   }
 });
 
@@ -186,7 +185,8 @@ const ListView = (creators: any[]) => html`
       <h1>Creators</h1>
       <ul>
         ${creators.map(
-          (creator) => html`<li>${creator.link} - ${creator.handle}</li>`
+          (creator) =>
+            html`<li>${creator.name} - ${creator.handle} - ${creator.link}</li>`
         )}
       </ul>
     </body>
@@ -197,19 +197,17 @@ const ListView = (creators: any[]) => html`
 app.get('/all', async (c) => {
   try {
     const results = await c.env.DB.prepare(
-      'SELECT creator.link, youtube.handle FROM creator JOIN youtube ON creator.youtube = youtube.id;'
+      'SELECT creators.name, youtube.handle, youtube.link FROM creators LEFT JOIN youtube ON creators.id = youtube.creator_id;'
     ).all();
 
     if (!results.results || results.results.length === 0) {
       return c.json({ message: 'No creators found.' }, 404);
     }
+
     return c.html(ListView(results.results));
   } catch (e) {
     console.error(e);
-    return c.json(
-      { error: e instanceof Error ? e.message : `Unknown error: ${e}` },
-      500
-    );
+    return c.json({ error: e.message || `Unknown error: ${e}` }, 500);
   }
 });
 

@@ -42,17 +42,20 @@ Goal: Create a basic user interface to manually enter creator names and a simple
 
 ### Milestone 2: Database and Link Collection Expansion
 
-User Story: As a user, I want the system to cross-reference multiple platforms for creators I follow.
+User Story: As a user, I want the system to cross-reference multiple platforms for creators I follow, ensuring accurate tracking across YouTube, Patreon, and future platforms.
 
-Goal: Expand the database to include more creators and cross-reference manually collected links between YouTube and Patreon.
+Goal: Expand the database to include more creators and cross-reference manually collected links between YouTube and Patreon. Improve the database schema for additional platforms.
 
-### Milestone 3: YouTube API Integration (Friends-Testing Stage)
+### Milestone 3: API Integration (Friends-Testing Stage)
 
 User Story: As a user, I want to automatically import the creators I follow on YouTube to my profile.
 
 User Story: As a user, I want to see which of my followed YouTube creators have Patreon pages linked.
 
-Goal: Integrate the YouTube API to automatically import creators. This is when the MVP can be tested with friends to gather initial feedback on automated data integration.
+Goal: Integrate the YouTube API to automatically import creators. This is when the MVP can be tested with friends to gather initial feedback on automated data integration. API priorities are below.
+    Social media APIs (YouTube, Twitter, Instagram)
+    Google APIs (Custom Search, Knowledge Graph)
+    Aggregator searches (LinkTree, Beacons)
 
 ## SWOT Analysis:
 

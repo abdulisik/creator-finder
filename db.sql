@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS creators;
 -- Create the creators table
 CREATE TABLE creators (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
+  name TEXT UNIQUE NOT NULL,
   discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   discovered_on TEXT NOT NULL
 );

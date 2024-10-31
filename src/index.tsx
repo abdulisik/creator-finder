@@ -1,8 +1,10 @@
 import { Hono } from 'hono';
 import { html } from 'hono/html';
+import fetch from 'node-fetch';
 
 type Bindings = {
   DB: D1Database;
+  YOUTUBE_API_KEY: string;
 };
 
 enum Platform {
@@ -74,7 +76,7 @@ const HomeView = () => (
               const query = searchInput.value;
               if (query.trim()) {
                 // Submit addition request to the backend
-                await fetch('/addFromAPI', {
+                await fetch('/add', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ handle: query.trim() }),
@@ -158,6 +160,167 @@ async function addCreator(
   }
 }
 
+function extractUrls(description: string): string[] {
+  const urlRegex = /https?:\/\/[^\s]+/g;
+  const urls = description.match(urlRegex);
+  return urls || [];
+}
+
+async function handleYouTubeCreator(
+  youtubeLink: string,
+  YOUTUBE_API_KEY: string
+) {
+  try {
+    // Step 1: Extract Channel ID from YouTube Link
+    const channelId = youtubeLink.split('/').pop();
+
+    // Step 2: Fetch Channel Details (including name and upload playlist ID)
+    const channelResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
+    );
+    const channelData = await channelResponse.json();
+
+    if (!channelData.items || !channelData.items.length) {
+      return { error: 'Channel not found' };
+    }
+
+    const channel = channelData.items[0];
+    const channelName = channel.snippet.title;
+    const uploadPlaylistId = channel.contentDetails.relatedPlaylists.uploads;
+
+    // Step 3: Get the latest video from the playlist
+    const videoResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadPlaylistId}&maxResults=1&key=${YOUTUBE_API_KEY}`
+    );
+    const videoData = await videoResponse.json();
+
+    if (!videoData.items || !videoData.items.length) {
+      return { error: 'No videos found in the playlist' };
+    }
+
+    const latestVideo = videoData.items[0];
+    const description = latestVideo.snippet.description;
+    //TODO: Check the last 2 videos instead of just the latest
+
+    // Step 4: Return the description and channel name
+    return { success: true, channelName, description };
+  } catch (error) {
+    console.error('Error in handleYouTubeCreator:', error);
+    return { error: 'Failed to process YouTube creator' };
+  }
+}
+
+async function upsertCreatorWithLinks(
+  db: D1Database,
+  channelName: string,
+  urls: string[]
+) {
+  try {
+    // Upsert to creators table
+    // TODO: Similarly, check if any of the links are already linked to an existing creator
+    const creatorInsert = await db
+      .prepare(
+        `INSERT INTO creators (name, discovered_on)
+       VALUES (?, 'YouTube') 
+       ON CONFLICT(name) DO UPDATE SET discovered_on='YouTube' 
+       RETURNING id`
+      )
+      .bind(channelName)
+      .first();
+
+    const creatorId = creatorInsert?.id;
+    if (!creatorId) throw new Error('Failed to upsert creator');
+
+    // Process URLs
+    const platformUrls = [];
+    const otherUrls = []; //TODO: Combine these into a single upsert if possible
+
+    for (const url of urls) {
+      if (url.includes('youtube.com'))
+        platformUrls.push([creatorId, url, 'YouTube']);
+      else if (url.includes('patreon.com'))
+        platformUrls.push([creatorId, url, 'Patreon']);
+      else otherUrls.push([creatorId, url, 'Other']);
+    }
+
+    // Insert platform-specific URLs
+    for (const [id, link, platform] of platformUrls) {
+      const handle =
+        platform === 'YouTube' ? 'default_handle' : 'unknown_handle';
+      await db
+        .prepare(
+          `INSERT INTO ${platform.toLowerCase()} (creator_id, handle, link, discovered_on)
+         VALUES (?, ?, ?, 'YouTube') ON CONFLICT DO NOTHING`
+        )
+        .bind(id, handle, link)
+        .run();
+    }
+
+    // Insert other links
+    for (const [id, link] of otherUrls) {
+      await db
+        .prepare(
+          `INSERT INTO other_links (creator_id, platform, handle, link, discovered_on)
+         VALUES (?, 'Other', ?, ?, 'YouTube')
+         ON CONFLICT DO NOTHING`
+        )
+        .bind(id, 'test_handle', link)
+        .run();
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in upsertCreatorWithLinks:', error);
+    return { error: error.message };
+  }
+}
+
+app.post('/add', async (c) => {
+  const bodyText = await c.req.text();
+  let handle;
+
+  try {
+    const body = JSON.parse(bodyText);
+    handle = body.handle;
+  } catch (e) {
+    return c.json({ message: 'Invalid JSON format', error: e }, 400);
+  }
+
+  if (typeof handle !== 'string' || handle.trim() === '') {
+    return c.json({ error: 'Invalid request' }, 400);
+  }
+  try {
+    // Check if the handle is already a full YouTube link
+    // Normalize the handle as a YouTube link
+    let youtubeLink = handle.trim();
+    if (!youtubeLink.startsWith('https://www.youtube.com')) { //TODO: Assert URL and handle better
+      youtubeLink = `https://www.youtube.com/channel/${encodeURIComponent(
+        youtubeLink
+      )}`;
+    }
+
+    // Call the YouTube creator handler to process the link
+    const { success, channelName, description } = await handleYouTubeCreator(
+      youtubeLink,
+      c.env.YOUTUBE_API_KEY
+    );
+    const urls = extractUrls(description);
+    const upsertResult = await upsertCreatorWithLinks(
+      c.env.DB,
+      channelName,
+      urls
+    );
+
+    if (upsertResult.error) {
+      return c.json({ error: upsertResult.error }, 500);
+    }
+    return c.json({ message: 'Creator and links processed successfully' });
+  } catch (error) {
+    console.error('Error in /add endpoint:', error);
+    return c.json({ error: error.message || 'Unknown error occurred' }, 500);
+  }
+});
+
 // Search Route
 app.get('/search/:query', async (c) => {
   try {
@@ -168,7 +331,7 @@ app.get('/search/:query', async (c) => {
        LEFT JOIN youtube ON creators.id = youtube.creator_id
        WHERE creators.name LIKE ? OR youtube.handle LIKE ?`
     )
-      .bind(`%${query}%`, `%${query}%`)
+      .bind(`%${query}%`, `%${query}%`) //TODO: Sanitize input
       .all();
 
     if (!results.results || results.results.length === 0) {

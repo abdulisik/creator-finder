@@ -11,34 +11,6 @@ enum Platform {
   Other = 'other_links',
 }
 
-
-// Layout Component for Reusability
-const Layout = ({ children }: { children: any }) => (
-  <html lang='en'>
-    <head>
-      <title>Creator Finder</title>
-    </head>
-    <body>{children}</body>
-  </html>
-);
-
-// Add Creator Form Component
-const AddForm = () => (
-  <Layout>
-    <h1>Add a Creator</h1>
-    <form action='/add' method='post'>
-      <label>
-        Creator Link: <input type='text' name='link' required />
-      </label>
-      <label>
-        YouTube Handle: <input type='text' name='youtubeHandle' required />
-      </label>
-      <button type='submit'>Add Creator</button>
-    </form>
-    <a href='/'>Back to Home</a>
-  </Layout>
-);
-
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Home View Component
@@ -82,6 +54,7 @@ const HomeView = () => (
             const searchInput = document.getElementById('searchInput');
             const resultsContainer =
               document.getElementById('resultsContainer');
+            const searchForm = document.getElementById('searchForm');
 
             searchInput.addEventListener('input', async (e) => {
               const query = e.target.value;
@@ -93,6 +66,20 @@ const HomeView = () => (
                 displayResults(creators);
               } else {
                 resultsContainer.innerHTML = ''; // Clear results if query is too short
+              }
+            });
+
+            searchForm.addEventListener('submit', async (e) => {
+              e.preventDefault(); // Prevent page reload on submit
+              const query = searchInput.value;
+              if (query.trim()) {
+                // Submit addition request to the backend
+                await fetch('/addFromAPI', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ handle: query.trim() }),
+                });
+                alert('Request submitted for processing');
               }
             });
 
@@ -113,13 +100,14 @@ const HomeView = () => (
       <nav>
         <a href='/'>Home</a> | <a href='/all'>View All Creators</a>
       </nav>
-      <h1>Find Creators</h1>
+      <h1>Find and Add Creators</h1>
       <form id='searchForm'>
         <input
           type='text'
           id='searchInput'
-          placeholder='Search for creators...'
+          placeholder='Search or add a YouTube handle...'
         />
+        <button type='submit'>Add Creator</button>
       </form>
       <div id='resultsContainer'></div>
     </body>
@@ -139,9 +127,12 @@ async function addCreator(
 ) {
   try {
     // Insert the creator and ensure ID is returned
-    const creatorResult = await db.prepare(
-      'INSERT INTO creators (name, discovered_on) VALUES (?, ?) RETURNING id'
-    ).bind(name, discoveredOn).first();
+    const creatorResult = await db
+      .prepare(
+        'INSERT INTO creators (name, discovered_on) VALUES (?, ?) RETURNING id'
+      )
+      .bind(name, discoveredOn)
+      .first();
 
     if (!creatorResult) {
       throw new Error('Creator insertion failed.');
@@ -149,9 +140,12 @@ async function addCreator(
     const creatorId = creatorResult.id;
 
     // Insert the platform-specific data
-    const platformInsert = await db.prepare(
-      `INSERT INTO ${platform} (creator_id, handle, link, discovered_on) VALUES (?, ?, ?, ?)`
-    ).bind(creatorId, handle, link, discoveredOn).run();
+    const platformInsert = await db
+      .prepare(
+        `INSERT INTO ${platform} (creator_id, handle, link, discovered_on) VALUES (?, ?, ?, ?)`
+      )
+      .bind(creatorId, handle, link, discoveredOn)
+      .run();
 
     if (!platformInsert.success) {
       throw new Error(`${platform} insertion failed.`);
@@ -163,8 +157,6 @@ async function addCreator(
     return { error: error.message || 'Unknown error' };
   }
 }
-
-
 
 // Search Route
 app.get('/search/:query', async (c) => {

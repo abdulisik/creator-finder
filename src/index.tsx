@@ -87,11 +87,36 @@ const HomeView = () => (
 
             function displayResults(creators) {
               const html = creators
-                .map(
-                  (creator) =>
-                    '<li>' + creator.link + ' - ' + creator.handle + '</li>'
-                )
+                .map(function (creator) {
+                  var youtubeInfo = creator.youtube_handle
+                    ? 'YouTube: ' +
+                      creator.youtube_handle +
+                      ' (' +
+                      creator.youtube_link +
+                      ')'
+                    : '';
+                  var patreonInfo = creator.patreon_handle
+                    ? 'Patreon: ' +
+                      creator.patreon_handle +
+                      ' (' +
+                      creator.patreon_link +
+                      ')'
+                    : '';
+                  var otherLinksInfo = creator.other_links
+                    ? 'Other: ' + creator.other_links
+                    : '';
+
+                  // Combine available details with line breaks
+                  var details = [youtubeInfo, patreonInfo, otherLinksInfo]
+                    .filter(function (info) {
+                      return info;
+                    }) // Remove empty strings
+                    .join('<br />');
+
+                  return '<li>' + creator.name + '<br />' + details + '</li>';
+                })
                 .join('');
+
               resultsContainer.innerHTML = '<ul>' + html + '</ul>';
             }
           });
@@ -201,7 +226,8 @@ async function handleYouTubeCreator(
     const latestVideo = videoData.items[0];
     const description = latestVideo.snippet.description;
     let urls = extractUrls(description);
-    if (videoData.items.length > 1) { //TODO: 2 is enough for now
+    if (videoData.items.length > 1) {
+      //TODO: 2 is enough for now
       const anotherVideo = videoData.items[1];
       const anotherDescription = anotherVideo.snippet.description;
       const otherUrls = extractUrls(anotherDescription);
@@ -299,7 +325,8 @@ app.post('/add', async (c) => {
     // Check if the handle is already a full YouTube link
     // Normalize the handle as a YouTube link
     let youtubeLink = handle.trim();
-    if (!youtubeLink.startsWith('https://www.youtube.com')) { //TODO: Assert URL and handle better
+    if (!youtubeLink.startsWith('https://www.youtube.com')) {
+      //TODO: Assert URL and handle better
       youtubeLink = `https://www.youtube.com/channel/${encodeURIComponent(
         youtubeLink
       )}`;
@@ -331,12 +358,18 @@ app.get('/search/:query', async (c) => {
   try {
     const query = c.req.param('query') || '';
     const results = await c.env.DB.prepare(
-      `SELECT creators.name, youtube.handle, youtube.link
+      `SELECT creators.name,
+              youtube.handle AS youtube_handle, youtube.link AS youtube_link,
+              patreon.handle AS patreon_handle, patreon.link AS patreon_link,
+              GROUP_CONCAT(other_links.platform || ': ' || other_links.link, ', ') AS other_links
        FROM creators
        LEFT JOIN youtube ON creators.id = youtube.creator_id
-       WHERE creators.name LIKE ? OR youtube.handle LIKE ?`
+       LEFT JOIN patreon ON creators.id = patreon.creator_id
+       LEFT JOIN other_links ON creators.id = other_links.creator_id
+       WHERE creators.name LIKE ? OR youtube.link LIKE ? OR patreon.link LIKE ?
+       GROUP BY creators.id, youtube.handle, youtube.link, patreon.handle, patreon.link`
     )
-      .bind(`%${query}%`, `%${query}%`) //TODO: Sanitize input
+      .bind(`%${query}%`, `%${query}%`, `%${query}%`) //TODO: Sanitize input
       .all();
 
     if (!results.results || results.results.length === 0) {
@@ -357,8 +390,20 @@ const ListView = (creators: any[]) => html`
       <h1>Creators</h1>
       <ul>
         ${creators.map(
-          (creator) =>
-            html`<li>${creator.name} - ${creator.handle} - ${creator.link}</li>`
+          (creator) => html`
+            <li>
+              ${creator.name}:<br />
+              ${creator.youtube_handle
+                ? `YouTube: ${creator.youtube_handle} ${creator.youtube_link}`
+                : 'No YouTube'}<br />
+              ${creator.patreon_handle
+                ? `Patreon: ${creator.patreon_handle} ${creator.patreon_link}`
+                : 'No Patreon'}<br />
+              ${creator.other_links
+                ? `Other: ${creator.other_links}`
+                : 'Nothing else'}<br />
+            </li>
+          `
         )}
       </ul>
     </body>
@@ -369,7 +414,15 @@ const ListView = (creators: any[]) => html`
 app.get('/all', async (c) => {
   try {
     const results = await c.env.DB.prepare(
-      'SELECT creators.name, youtube.handle, youtube.link FROM creators LEFT JOIN youtube ON creators.id = youtube.creator_id;'
+      `SELECT creators.name,
+              youtube.handle AS youtube_handle, youtube.link AS youtube_link,
+              patreon.handle AS patreon_handle, patreon.link AS patreon_link,
+              GROUP_CONCAT(other_links.platform || ': ' || other_links.link, ', ') AS other_links
+       FROM creators
+       LEFT JOIN youtube ON creators.id = youtube.creator_id
+       LEFT JOIN patreon ON creators.id = patreon.creator_id
+       LEFT JOIN other_links ON creators.id = other_links.creator_id
+       GROUP BY creators.id, youtube.handle, youtube.link, patreon.handle, patreon.link`
     ).all();
 
     if (!results.results || results.results.length === 0) {

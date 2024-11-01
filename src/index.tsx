@@ -7,7 +7,7 @@ type Bindings = {
   YOUTUBE_API_KEY: string;
 };
 
-enum Platform {
+enum Platform { //TODO: Redundant, grab from the db.
   YouTube = 'youtube',
   Patreon = 'patreon',
   Other = 'other_links',

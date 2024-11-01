@@ -46,16 +46,38 @@ User Story: As a user, I want the system to cross-reference multiple platforms f
 
 Goal: Expand the database to include more creators and cross-reference manually collected links between YouTube and Patreon. Improve the database schema for additional platforms.
 
-### Milestone 3: API Integration (Friends-Testing Stage)
+### **Milestone 3: API Integration (Friends-Testing Stage)**
 
-User Story: As a user, I want to automatically import the creators I follow on YouTube to my profile.
+**User Stories**:
+1. As a user, I want to automatically import the creators I follow on YouTube to my profile.
+2. As a user, I want to see which of my followed YouTube creators have Patreon pages linked.
 
-User Story: As a user, I want to see which of my followed YouTube creators have Patreon pages linked.
+**Goal**: Integrate the YouTube API to automatically import creators, enabling initial feedback testing with friends.
 
-Goal: Integrate the YouTube API to automatically import creators. This is when the MVP can be tested with friends to gather initial feedback on automated data integration. API priorities are below.
-    Social media APIs (YouTube, Twitter, Instagram)
-    Google APIs (Custom Search, Knowledge Graph)
-    Aggregator searches (LinkTree, Beacons)
+#### **Milestone 3.1: Initial YouTube API Integration for Video Descriptions**
+   - **Description**: Connect to the YouTube API to gather video descriptions from user-specified channels and extract any URLs.
+   - **Tasks**:
+     - Set up an API call to fetch the latest video description for a given channel.
+     - Extract URLs from the video description using `extractUrls`.
+     - Test link extraction for multiple channels and insert results into the database.
+
+#### **Milestone 3.2: Automated Link Insertion via `processAndInsertLink`**
+   - **Description**: Implement a method to automatically handle link insertion, classifying URLs by domain and platform.
+   - **Tasks**:
+     - Create a `domains` table to track domains and their associated platforms.
+     - Develop `processAndInsertLink` to:
+       1. Extract domains from each URL.
+       2. Check and update `domains`.
+       3. Insert URLs into appropriate platform tables.
+     - Test with extracted data to confirm accurate classification.
+
+#### **Milestone 3.3: OAuth Integration with YouTube for Subscribed Channels**
+   - **Description**: Integrate YouTube OAuth to retrieve a user’s subscriptions, extracting details to auto-populate creator profiles.
+   - **Tasks**:
+     - Implement OAuth flow for user authentication.
+     - Fetch user’s subscribed channels, then call `processAndInsertLink` on each.
+     - Store each retrieved creator profile in the database.
+
 
 ## SWOT Analysis:
 
@@ -103,7 +125,7 @@ Cross-Recommendations: Add algorithms to suggest creators across platforms based
 
 Alpha User Community Engagement: Create an early user community (e.g., Discord) to gather insights, encourage contributions, and strengthen user engagement.
 
-Improve the tech stack: Caching, recording time and place of the connections. Add a table to hold a list of domains, their quantity within the db and their associated tables; this will allow us to pick the next platform to add.
+Improve the tech stack: Recording time and place of the connections. Add a table to hold a list of domains, their quantity within the db and their associated tables; this will allow us to pick the next platform to add. It'll also allow us to have an admin view to analyze and process the list of domains. Store user information only locally.
 
 Market research: Find competitors, and determine our unique value proposition. We answer the questions should I open an account on this other platform, can I close my account on this platform safely, etc.
 

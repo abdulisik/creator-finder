@@ -200,10 +200,16 @@ async function handleYouTubeCreator(
 
     const latestVideo = videoData.items[0];
     const description = latestVideo.snippet.description;
-    //TODO: Check the last 2 videos instead of just the latest
+    let urls = extractUrls(description);
+    if (videoData.items.length > 1) { //TODO: 2 is enough for now
+      const anotherVideo = videoData.items[1];
+      const anotherDescription = anotherVideo.snippet.description;
+      const otherUrls = extractUrls(anotherDescription);
+      urls = urls.filter((url) => otherUrls.includes(url));
+    }
 
-    // Step 4: Return the description and channel name
-    return { success: true, channelName, description };
+    // Step 4: Return the urls and channel name
+    return { success: true, channelName, urls };
   } catch (error) {
     console.error('Error in handleYouTubeCreator:', error);
     return { error: 'Failed to process YouTube creator' };
@@ -300,11 +306,10 @@ app.post('/add', async (c) => {
     }
 
     // Call the YouTube creator handler to process the link
-    const { success, channelName, description } = await handleYouTubeCreator(
+    const { success, channelName, urls } = await handleYouTubeCreator(
       youtubeLink,
       c.env.YOUTUBE_API_KEY
     );
-    const urls = extractUrls(description);
     const upsertResult = await upsertCreatorWithLinks(
       c.env.DB,
       channelName,

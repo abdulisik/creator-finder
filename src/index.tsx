@@ -5,6 +5,8 @@ import fetch from 'node-fetch';
 type Bindings = {
   DB: D1Database;
   YOUTUBE_API_KEY: string;
+  YOUTUBE_CLIENT_ID: string;
+  YOUTUBE_CLIENT_SECRET: string;
 };
 
 enum Platform { //TODO: Redundant, grab from the db.
@@ -12,6 +14,8 @@ enum Platform { //TODO: Redundant, grab from the db.
   Patreon = 'patreon',
   Other = 'other_links',
 }
+
+const baseURL = 'https://creator-finder.abdulisik.workers.dev';// 'http://localhost:8787';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -85,6 +89,32 @@ const HomeView = () => (
               }
             });
 
+            document
+              .getElementById('authorizeButton')
+              .addEventListener('click', async () => {
+                const clientId =
+                  '435034689740-dqkt9rq57tf9e0a0i7j9c0jq0gpnhv7q.apps.googleusercontent.com';
+                const redirectUri =
+                  // 'http://localhost:8787'+
+                  'https://creator-finder.abdulisik.workers.dev'+
+                  '/callback';
+                const scope =
+                  'https://www.googleapis.com/auth/youtube.readonly';
+
+                const authUrl =
+                  'https://accounts.google.com/o/oauth2/auth' +
+                  '?client_id=' +
+                  encodeURIComponent(clientId) +
+                  '&redirect_uri=' +
+                  encodeURIComponent(redirectUri) +
+                  '&response_type=' +
+                  encodeURIComponent('code') +
+                  '&scope=' +
+                  encodeURIComponent(scope);
+
+                window.location.href = authUrl; // Redirects to Google's OAuth consent screen
+              });
+
             function displayResults(creators) {
               const html = creators
                 .map(function (creator) {
@@ -115,6 +145,8 @@ const HomeView = () => (
       </nav>
       <h1>Find and Add Creators</h1>
       <form id='searchForm'>
+        <button id='authorizeButton'>Authorize YouTube Access</button>
+        <br />
         <input
           type='text'
           id='searchInput'
@@ -129,6 +161,83 @@ const HomeView = () => (
 
 // Route to Serve Home View
 app.get('/', (c) => c.html(<HomeView />));
+
+
+async function processSubscribedChannels(accessToken) {
+  try {
+    // Step 1: Fetch the list of subscriptions
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!data.items) {
+      return { error: 'No subscriptions found or insufficient permissions' };
+    }
+
+    // Step 2: Loop through each subscription and post the channelId to /add
+    const processedTitles = [];
+
+    for (const item of data.items) {
+      const channelId = item.snippet.resourceId.channelId;
+      const channelTitle = item.snippet.title;
+
+      // Post channelId to /add endpoint
+      await fetch(`${baseURL}/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle:channelId }),
+      });
+
+      // Add channel title to processedTitles
+      processedTitles.push(channelTitle);
+    }
+
+    // Step 3: Return success JSON with the list of channel titles
+    return { success: true, processedTitles };
+  } catch (error) {
+    console.error('Error processing subscriptions:', error);
+    return { error: 'Failed to process subscriptions' };
+  }
+}
+
+
+app.get('/callback', async (c) => {
+  const url = new URL(c.req.url);
+  const code = url.searchParams.get('code'); // Get the authorization code from the URL
+
+  if (!code) {
+    return c.json({ error: 'Authorization code missing from URL' });
+  }
+
+  // Exchange the authorization code for an access token
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id: c.env.YOUTUBE_CLIENT_ID,
+      client_secret: c.env.YOUTUBE_CLIENT_SECRET,
+      redirect_uri: `${baseURL}/callback`,
+      grant_type: 'authorization_code',
+    }),
+  });
+
+  const tokenData = await tokenResponse.json();
+
+  if (!tokenData.access_token) {
+    return c.json({ error: 'Failed to obtain access token' });
+  }
+  const response = await processSubscribedChannels(tokenData.access_token);
+  return c.json(response);
+});
 
 async function addCreator(
   db: D1Database,

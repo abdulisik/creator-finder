@@ -119,7 +119,7 @@ Open Source Considerations: Evaluate open sourcing some or all parts of the proj
 
 Platform Integration: Incorporate API integrations to automate the import of creator lists from YouTube and other platforms.
 
-More Platforms: Expand to other creator-driven platforms like Instagram, TikTok, Twitch, etc.
+More Platforms: Expand to other creator-driven platforms like Instagram, TikTok, Twitch, etc. Process links from data aggregators like Linktree, or shorteners like Bitly.
 
 Cross-Recommendations: Add algorithms to suggest creators across platforms based on user preferences and personas.
 

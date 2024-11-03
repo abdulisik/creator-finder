@@ -125,7 +125,9 @@ Cross-Recommendations: Add algorithms to suggest creators across platforms based
 
 Alpha User Community Engagement: Create an early user community (e.g., Discord) to gather insights, encourage contributions, and strengthen user engagement.
 
-Improve the tech stack: Recording time and place of the connections. Add a table to hold a list of domains, their quantity within the db and their associated tables; this will allow us to pick the next platform to add. It'll also allow us to have an admin view to analyze and process the list of domains. Store user information only locally.
+Improve the tech stack: Recording time and place of the connections.
+
+Analytics and management: Add a table to hold a list of domains, their quantity within the db and their associated tables; this will allow us to pick the next platform to add. It'll also allow us to have an admin view to analyze and process the list of domains. Store user information only locally. We can outsource matching a domain to a platform: https://www.netify.ai/products/netify-data-feeds/pricing
 
 Market research: Find competitors, and determine our unique value proposition. We answer the questions should I open an account on this other platform, can I close my account on this platform safely, etc.
 

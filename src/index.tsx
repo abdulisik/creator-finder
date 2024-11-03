@@ -88,32 +88,18 @@ const HomeView = () => (
             function displayResults(creators) {
               const html = creators
                 .map(function (creator) {
-                  var youtubeInfo = creator.youtube_handle
-                    ? 'YouTube: ' +
-                      creator.youtube_handle +
-                      ' (' +
-                      creator.youtube_link +
-                      ')'
-                    : '';
-                  var patreonInfo = creator.patreon_handle
-                    ? 'Patreon: ' +
-                      creator.patreon_handle +
-                      ' (' +
-                      creator.patreon_link +
-                      ')'
-                    : '';
-                  var otherLinksInfo = creator.other_links
-                    ? 'Other: ' + creator.other_links
-                    : '';
-
-                  // Combine available details with line breaks
-                  var details = [youtubeInfo, patreonInfo, otherLinksInfo]
-                    .filter(function (info) {
-                      return info;
-                    }) // Remove empty strings
-                    .join('<br />');
-
-                  return '<li>' + creator.name + '<br />' + details + '</li>';
+                  return (
+                    '<li>' +
+                    creator.name +
+                    ' - ' +
+                    creator.platform +
+                    ': ' +
+                    (creator.handle ? '@' + creator.handle : '') +
+                    ' (' +
+                    creator.link +
+                    ')' +
+                    '</li>'
+                  );
                 })
                 .join('');
 
@@ -205,7 +191,8 @@ async function handleYouTubeCreator(
     );
     const channelData = await channelResponse.json();
 
-    if (!channelData.items || !channelData.items.length) {
+    if (!channelData.items?.length) {
+      console.error('Channel not found:', channelData);
       return { error: 'Channel not found' };
     }
 
@@ -239,6 +226,52 @@ async function handleYouTubeCreator(
   } catch (error) {
     console.error('Error in handleYouTubeCreator:', error);
     return { error: 'Failed to process YouTube creator' };
+  }
+}
+
+async function processAndInsertLink(
+  db: D1Database,
+  creatorId: number,
+  url: string,
+  platform: string
+) {
+  try {
+    // Extract domain from URL
+    const domain = new URL(url).hostname;
+
+    //TODO: domains already expects unique text, so just use upsert
+    // Update or insert into domains table
+    const domainCheck = await db
+      .prepare(`SELECT id FROM domains WHERE domain = ?`)
+      .bind(domain)
+      .first();
+
+    if (!domainCheck) {
+      await db
+        .prepare(
+          `INSERT INTO domains (domain, platform, quantity) VALUES (?, ?, 1)`
+        )
+        .bind(domain, platform)
+        .run();
+    } else {
+      await db
+        .prepare(`UPDATE domains SET quantity = quantity + 1 WHERE domain = ?`)
+        .bind(domain)
+        .run();
+    }
+
+    // Insert link into links table
+    await db
+      .prepare(
+        `INSERT INTO links (creator_id, platform, link, discovered_on) VALUES (?, ?, ?, ?)`
+      )
+      .bind(creatorId, platform, url, platform)
+      .run();
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in processAndInsertLink:', error);
+    return { error: 'Failed to insert link' };
   }
 }
 
@@ -309,7 +342,7 @@ async function upsertCreatorWithLinks(
 
 app.post('/add', async (c) => {
   const bodyText = await c.req.text();
-  let handle;
+  let handle: string;
 
   try {
     const body = JSON.parse(bodyText);
@@ -322,29 +355,38 @@ app.post('/add', async (c) => {
     return c.json({ error: 'Invalid request' }, 400);
   }
   try {
-    // Check if the handle is already a full YouTube link
-    // Normalize the handle as a YouTube link
-    let youtubeLink = handle.trim();
-    if (!youtubeLink.startsWith('https://www.youtube.com')) {
+    // Step 1: Sanitize and Convert Query to YouTube Link if Necessary
+    let link = handle.trim();
+    if (!link.startsWith('http')) {
       //TODO: Assert URL and handle better
-      youtubeLink = `https://www.youtube.com/channel/${encodeURIComponent(
-        youtubeLink
-      )}`;
+      link = `https://www.youtube.com/c/${encodeURIComponent(link)}`;
     }
 
-    // Call the YouTube creator handler to process the link
-    const { success, channelName, urls } = await handleYouTubeCreator(
-      youtubeLink,
-      c.env.YOUTUBE_API_KEY
-    );
-    const upsertResult = await upsertCreatorWithLinks(
-      c.env.DB,
-      channelName,
-      urls
-    );
+    // Step 2: Check if Link Already Exists in Database
+    const existingLink = await c.env.DB.prepare(
+      `SELECT id FROM links WHERE link = ?`
+    )
+      .bind(link)
+      .first();
 
-    if (upsertResult.error) {
-      return c.json({ error: upsertResult.error }, 500);
+    if (existingLink) {
+      return c.json({ message: 'Link already exists in the database.' });
+    }
+
+    // Step 3: Insert New Creator if Link is New
+    const creatorId = await getOrCreateCreator(c.env.DB, handle);
+
+    // Step 4: Call handleYouTubeCreator to Extract URLs
+    const result = await handleYouTubeCreator(link, c.env.YOUTUBE_API_KEY);
+    if (!result.success) {
+      console.error('Error in handleYouTubeCreator:', result.error);
+      throw new Error('Failed to retrieve YouTube data.');
+    }
+
+    // Step 5: Process and Insert Each URL
+    const { channelName, urls } = result;
+    for (const url of urls) {
+      await processAndInsertLink(c.env.DB, creatorId, url, channelName);
     }
     return c.json({ message: 'Creator and links processed successfully' });
   } catch (error) {
@@ -353,23 +395,41 @@ app.post('/add', async (c) => {
   }
 });
 
+// Utility function to insert or get existing creator
+async function getOrCreateCreator(db: D1Database, name: string) {
+  const existingCreator = await db
+    .prepare(`SELECT id FROM creators WHERE name = ?`)
+    .bind(name)
+    .first();
+
+  if (existingCreator) return existingCreator.id;
+
+  const newCreator = await db
+    .prepare(
+      `INSERT INTO creators (name, discovered_on) VALUES (?, 'YouTube') RETURNING id`
+    )
+    .bind(name)
+    .first();
+
+  return newCreator?.id;
+}
+
 // Search Route
 app.get('/search/:query', async (c) => {
   try {
     const query = c.req.param('query') || '';
     const results = await c.env.DB.prepare(
       `SELECT creators.name,
-              youtube.handle AS youtube_handle, youtube.link AS youtube_link,
-              patreon.handle AS patreon_handle, patreon.link AS patreon_link,
-              GROUP_CONCAT(other_links.platform || ': ' || other_links.link, ', ') AS other_links
+              links.platform,
+              links.handle,
+              links.link,
+              GROUP_CONCAT(links.platform || ': ' || links.link, ', ') AS platforms
        FROM creators
-       LEFT JOIN youtube ON creators.id = youtube.creator_id
-       LEFT JOIN patreon ON creators.id = patreon.creator_id
-       LEFT JOIN other_links ON creators.id = other_links.creator_id
-       WHERE creators.name LIKE ? OR youtube.link LIKE ? OR patreon.link LIKE ?
-       GROUP BY creators.id, youtube.handle, youtube.link, patreon.handle, patreon.link`
+       LEFT JOIN links ON creators.id = links.creator_id
+       WHERE creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?
+       GROUP BY creators.id, creators.name`
     )
-      .bind(`%${query}%`, `%${query}%`, `%${query}%`) //TODO: Sanitize input
+      .bind(`%${query}%`, `%${query}%`, `%${query}%`)
       .all();
 
     if (!results.results || results.results.length === 0) {
@@ -384,24 +444,16 @@ app.get('/search/:query', async (c) => {
 });
 
 // List View Component to Display All Creators
-const ListView = (creators: any[]) => html`
+const ListView = (links: any[]) => html`
   <html>
     <body>
-      <h1>Creators</h1>
+      <h1>Creators and Links</h1>
       <ul>
-        ${creators.map(
-          (creator) => html`
+        ${links.map(
+          (link) => html`
             <li>
-              ${creator.name}:<br />
-              ${creator.youtube_handle
-                ? `YouTube: ${creator.youtube_handle} ${creator.youtube_link}`
-                : 'No YouTube'}<br />
-              ${creator.patreon_handle
-                ? `Patreon: ${creator.patreon_handle} ${creator.patreon_link}`
-                : 'No Patreon'}<br />
-              ${creator.other_links
-                ? `Other: ${creator.other_links}`
-                : 'Nothing else'}<br />
+              ${link.name} - ${link.platform}:
+              ${link.handle ? '@' + link.handle : ''} (${link.link})
             </li>
           `
         )}
@@ -410,30 +462,16 @@ const ListView = (creators: any[]) => html`
   </html>
 `;
 
-// Route to Display All Creators
 app.get('/all', async (c) => {
-  try {
-    const results = await c.env.DB.prepare(
-      `SELECT creators.name,
-              youtube.handle AS youtube_handle, youtube.link AS youtube_link,
-              patreon.handle AS patreon_handle, patreon.link AS patreon_link,
-              GROUP_CONCAT(other_links.platform || ': ' || other_links.link, ', ') AS other_links
-       FROM creators
-       LEFT JOIN youtube ON creators.id = youtube.creator_id
-       LEFT JOIN patreon ON creators.id = patreon.creator_id
-       LEFT JOIN other_links ON creators.id = other_links.creator_id
-       GROUP BY creators.id, youtube.handle, youtube.link, patreon.handle, patreon.link`
-    ).all();
+  const results = await c.env.DB.prepare(
+    `SELECT creators.name, links.platform, links.handle, links.link
+     FROM links
+     JOIN creators ON links.creator_id = creators.id`
+  ).all();
 
-    if (!results.results || results.results.length === 0) {
-      return c.json({ message: 'No creators found.' }, 404);
-    }
-
-    return c.html(ListView(results.results));
-  } catch (e) {
-    console.error(e);
-    return c.json({ error: e.message || `Unknown error: ${e}` }, 500);
-  }
+  return results.results
+    ? c.html(ListView(results.results))
+    : c.json({ message: 'No creators found.' }, 404);
 });
 
 export default app;

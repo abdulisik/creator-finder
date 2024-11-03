@@ -1,64 +1,53 @@
 PRAGMA foreign_keys = ON;
 PRAGMA defer_foreign_keys = true;
 -- Drop existing tables if they exist
-DROP TABLE IF EXISTS youtube;
-DROP TABLE IF EXISTS patreon;
-DROP TABLE IF EXISTS other_links;
 DROP TABLE IF EXISTS creators;
+DROP TABLE IF EXISTS links;
+DROP TABLE IF EXISTS domains;
 
 -- Create the creators table
-CREATE TABLE creators (
+CREATE TABLE IF NOT EXISTS creators (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT UNIQUE NOT NULL,
   discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   discovered_on TEXT NOT NULL
 );
 
--- Create the youtube table
-CREATE TABLE youtube (
+-- Create links table
+CREATE TABLE IF NOT EXISTS links (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   creator_id INTEGER,
-  handle TEXT NOT NULL,
+  platform TEXT,
+  handle TEXT,
   link TEXT NOT NULL,
   discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  discovered_on TEXT NOT NULL,
+  discovered_on TEXT,
   FOREIGN KEY (creator_id) REFERENCES creators(id) ON DELETE CASCADE
 );
 
--- Create the patreon table
-CREATE TABLE patreon (
+-- Create domains table to track domain frequency and associated platform
+CREATE TABLE IF NOT EXISTS domains (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  creator_id INTEGER,
-  handle TEXT NOT NULL,
-  link TEXT NOT NULL,
-  discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  discovered_on TEXT NOT NULL,
-  FOREIGN KEY (creator_id) REFERENCES creators(id) ON DELETE CASCADE
+  domain TEXT UNIQUE NOT NULL,
+  platform TEXT NOT NULL,  -- e.g., 'youtube', 'patreon', 'other'
+  quantity INTEGER DEFAULT 0  -- Keeps track of link count for each domain
 );
 
--- Create the other_links table
-CREATE TABLE other_links (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  creator_id INTEGER,
-  platform TEXT NOT NULL,
-  handle TEXT NOT NULL,
-  link TEXT NOT NULL,
-  discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  discovered_on TEXT NOT NULL,
-  FOREIGN KEY (creator_id) REFERENCES creators(id) ON DELETE CASCADE
-);
+-- Insert sample data into creators table
+INSERT INTO creators (name, discovered_on) VALUES 
+  ('John Doe', 'YouTube'),
+  ('Jane Smith', 'Patreon'),
+  ('Alice Brown', 'Other');
 
--- Insert test data into the creators table
-INSERT INTO creators (name, discovered_on) VALUES ('John Doe', 'Search Engine');
+-- Insert sample data into links table, associating each link with a creator
+INSERT INTO links (creator_id, platform, handle, link, discovered_on) VALUES 
+  (1, 'youtube', '@john_doe', 'https://youtube.com/c/johndoe', 'YouTube'),
+  (1, 'patreon', 'john_patreon', 'https://patreon.com/johndoe', 'YouTube'),
+  (2, 'patreon', '@jane_smith', 'https://patreon.com/janesmith', 'Patreon'),
+  (3, 'other', 'alice_social', 'https://linktree.com/alicebrown', 'Linktree');
 
--- Insert test data into the youtube table
-INSERT INTO youtube (creator_id, handle, link, discovered_on) 
-VALUES (1, '@john_channel', 'https://youtube.com/johndoe', 'Google Search');
-
--- Insert test data into the patreon table
-INSERT INTO patreon (creator_id, handle, link, discovered_on) 
-VALUES (1, 'johnpatreon', 'https://patreon.com/johndoe', 'Twitter');
-
--- Insert test data into the other_links table
-INSERT INTO other_links (creator_id, platform, handle, link, discovered_on) 
-VALUES (1, 'Instagram', 'johninsta', 'https://instagram.com/johndoe', 'Instagram Search');
+-- Insert sample data into domains table
+INSERT INTO domains (domain, platform, quantity) VALUES
+  ('youtube.com', 'youtube', 1),
+  ('patreon.com', 'patreon', 2),
+  ('linktree.com', 'other', 1);

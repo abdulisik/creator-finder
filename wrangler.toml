@@ -22,6 +22,6 @@ database_id = "b63bac41-54e0-4c8e-8701-38c3b3b208fb"
 # [ai]
 # binding = "AI"
 
-# [observability]
-# enabled = true
-# head_sampling_rate = 1
+[observability]
+enabled = true
+head_sampling_rate = 1

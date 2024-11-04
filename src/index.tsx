@@ -439,12 +439,10 @@ app.get('/search/:query', async (c) => {
       `SELECT creators.name,
               links.platform,
               links.handle,
-              links.link,
-              GROUP_CONCAT(links.platform || ': ' || links.link, ', ') AS platforms
+              links.link
        FROM creators
        LEFT JOIN links ON creators.id = links.creator_id
-       WHERE creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?
-       GROUP BY creators.id, creators.name`
+       WHERE creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?`
     )
       .bind(`%${query}%`, `%${query}%`, `%${query}%`)
       .all();

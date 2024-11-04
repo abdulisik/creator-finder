@@ -118,12 +118,12 @@ const HomeView = () => (
                     '<li>' +
                     creator.name +
                     ' - ' +
-                    creator.platform +
-                    ': ' +
-                    (creator.handle ? '@' + creator.handle : '') +
-                    ' (' +
+                    '<a href="' +
                     creator.link +
-                    ')' +
+                    '" target="_blank">' +
+                    creator.platform +
+                    (creator.handle ? ': @' + creator.handle : '') +
+                    '</a>' +
                     '</li>'
                   );
                 })

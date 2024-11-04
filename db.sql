@@ -35,19 +35,12 @@ CREATE TABLE IF NOT EXISTS domains (
 
 -- Insert sample data into creators table
 INSERT INTO creators (name, discovered_on) VALUES 
-  ('John Doe', 'YouTube'),
-  ('Jane Smith', 'Patreon'),
-  ('Alice Brown', 'Other');
+  ('Marques Brownlee', 'YouTube');
 
 -- Insert sample data into links table, associating each link with a creator
 INSERT INTO links (creator_id, platform, handle, link, discovered_on) VALUES 
-  (1, 'youtube', '@john_doe', 'https://youtube.com/c/johndoe', 'YouTube'),
-  (1, 'patreon', 'john_patreon', 'https://patreon.com/johndoe', 'YouTube'),
-  (2, 'patreon', '@jane_smith', 'https://patreon.com/janesmith', 'Patreon'),
-  (3, 'other', 'alice_social', 'https://linktree.com/alicebrown', 'Linktree');
+  (1, 'youtube', '@mkbhd', 'https://www.youtube.com/@mkbhd', 'YouTube');
 
 -- Insert sample data into domains table
 INSERT INTO domains (domain, platform, quantity) VALUES
-  ('youtube.com', 'youtube', 1),
-  ('patreon.com', 'patreon', 2),
-  ('linktree.com', 'other', 1);
+  ('youtube.com', 'youtube', 1);

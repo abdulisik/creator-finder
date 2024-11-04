@@ -9,13 +9,9 @@ type Bindings = {
   YOUTUBE_CLIENT_SECRET: string;
 };
 
-enum Platform { //TODO: Redundant, grab from the db.
-  YouTube = 'youtube',
-  Patreon = 'patreon',
-  Other = 'other_links',
-}
-
-const baseURL = 'https://creator-finder.abdulisik.workers.dev';// 'http://localhost:8787';
+const baseURL =
+  'https://creator-finder.abdulisik.workers.dev';
+  // 'http://localhost:8787';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -162,12 +158,11 @@ const HomeView = () => (
 // Route to Serve Home View
 app.get('/', (c) => c.html(<HomeView />));
 
-
 async function processSubscribedChannels(accessToken) {
   try {
     // Step 1: Fetch the list of subscriptions
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true`,
+      `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=50`, //TODO: handle nextPageToken
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -193,7 +188,7 @@ async function processSubscribedChannels(accessToken) {
       await fetch(`${baseURL}/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handle:channelId }),
+        body: JSON.stringify({ handle: channelId }),
       });
 
       // Add channel title to processedTitles
@@ -207,7 +202,6 @@ async function processSubscribedChannels(accessToken) {
     return { error: 'Failed to process subscriptions' };
   }
 }
-
 
 app.get('/callback', async (c) => {
   const url = new URL(c.req.url);
@@ -239,47 +233,6 @@ app.get('/callback', async (c) => {
   return c.json(response);
 });
 
-async function addCreator(
-  db: D1Database,
-  name: string,
-  platform: Platform,
-  handle: string,
-  link: string,
-  discoveredOn: string
-) {
-  try {
-    // Insert the creator and ensure ID is returned
-    const creatorResult = await db
-      .prepare(
-        'INSERT INTO creators (name, discovered_on) VALUES (?, ?) RETURNING id'
-      )
-      .bind(name, discoveredOn)
-      .first();
-
-    if (!creatorResult) {
-      throw new Error('Creator insertion failed.');
-    }
-    const creatorId = creatorResult.id;
-
-    // Insert the platform-specific data
-    const platformInsert = await db
-      .prepare(
-        `INSERT INTO ${platform} (creator_id, handle, link, discovered_on) VALUES (?, ?, ?, ?)`
-      )
-      .bind(creatorId, handle, link, discoveredOn)
-      .run();
-
-    if (!platformInsert.success) {
-      throw new Error(`${platform} insertion failed.`);
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('Error inserting data:', error);
-    return { error: error.message || 'Unknown error' };
-  }
-}
-
 function extractUrls(description: string): string[] {
   const urlRegex = /https?:\/\/[^\s]+/g;
   const urls = description.match(urlRegex);
@@ -309,9 +262,9 @@ async function handleYouTubeCreator(
     const channelName = channel.snippet.title;
     const uploadPlaylistId = channel.contentDetails.relatedPlaylists.uploads;
 
-    // Step 3: Get the latest video from the playlist
+    // Step 3: Get the latest videos from the playlist
     const videoResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadPlaylistId}&maxResults=1&key=${YOUTUBE_API_KEY}`
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadPlaylistId}&key=${YOUTUBE_API_KEY}`
     );
     const videoData = await videoResponse.json();
 
@@ -319,15 +272,19 @@ async function handleYouTubeCreator(
       return { error: 'No videos found in the playlist' };
     }
 
-    const latestVideo = videoData.items[0];
-    const description = latestVideo.snippet.description;
-    let urls = extractUrls(description);
-    if (videoData.items.length > 1) {
-      //TODO: 2 is enough for now
-      const anotherVideo = videoData.items[1];
-      const anotherDescription = anotherVideo.snippet.description;
-      const otherUrls = extractUrls(anotherDescription);
+    // Extract URLs from the video descriptions
+    let urls: string[] = [];
+    let counter = 0;
+    for (const video of videoData.items) {
+      const description = video.snippet.description;
+      const otherUrls = extractUrls(description);
+      if (!otherUrls.length) continue;
+      if (!urls.length) urls = [...otherUrls];
       urls = urls.filter((url) => otherUrls.includes(url));
+      if (counter++ > 2) break;
+    }
+    if (!urls.length) {
+      return { error: 'No URLs found in the videos' };
     }
 
     // Step 4: Return the urls and channel name
@@ -341,12 +298,14 @@ async function handleYouTubeCreator(
 async function processAndInsertLink(
   db: D1Database,
   creatorId: number,
-  url: string,
-  platform: string
+  url: string
 ) {
   try {
     // Extract domain from URL
-    const domain = new URL(url).hostname;
+    const domain = new URL(url).hostname.toLowerCase();
+    const platform = domain //TODO: Refactor
+      .replace('www.', '')
+      .replace('.com', '');
 
     //TODO: domains already expects unique text, so just use upsert
     // Update or insert into domains table
@@ -384,71 +343,6 @@ async function processAndInsertLink(
   }
 }
 
-async function upsertCreatorWithLinks(
-  db: D1Database,
-  channelName: string,
-  urls: string[]
-) {
-  try {
-    // Upsert to creators table
-    // TODO: Similarly, check if any of the links are already linked to an existing creator
-    const creatorInsert = await db
-      .prepare(
-        `INSERT INTO creators (name, discovered_on)
-       VALUES (?, 'YouTube') 
-       ON CONFLICT(name) DO UPDATE SET discovered_on='YouTube' 
-       RETURNING id`
-      )
-      .bind(channelName)
-      .first();
-
-    const creatorId = creatorInsert?.id;
-    if (!creatorId) throw new Error('Failed to upsert creator');
-
-    // Process URLs
-    const platformUrls = [];
-    const otherUrls = []; //TODO: Combine these into a single upsert if possible
-
-    for (const url of urls) {
-      if (url.includes('youtube.com'))
-        platformUrls.push([creatorId, url, 'YouTube']);
-      else if (url.includes('patreon.com'))
-        platformUrls.push([creatorId, url, 'Patreon']);
-      else otherUrls.push([creatorId, url, 'Other']);
-    }
-
-    // Insert platform-specific URLs
-    for (const [id, link, platform] of platformUrls) {
-      const handle =
-        platform === 'YouTube' ? 'default_handle' : 'unknown_handle';
-      await db
-        .prepare(
-          `INSERT INTO ${platform.toLowerCase()} (creator_id, handle, link, discovered_on)
-         VALUES (?, ?, ?, 'YouTube') ON CONFLICT DO NOTHING`
-        )
-        .bind(id, handle, link)
-        .run();
-    }
-
-    // Insert other links
-    for (const [id, link] of otherUrls) {
-      await db
-        .prepare(
-          `INSERT INTO other_links (creator_id, platform, handle, link, discovered_on)
-         VALUES (?, 'Other', ?, ?, 'YouTube')
-         ON CONFLICT DO NOTHING`
-        )
-        .bind(id, 'test_handle', link)
-        .run();
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('Error in upsertCreatorWithLinks:', error);
-    return { error: error.message };
-  }
-}
-
 app.post('/add', async (c) => {
   const bodyText = await c.req.text();
   let handle: string;
@@ -468,7 +362,7 @@ app.post('/add', async (c) => {
     let link = handle.trim();
     if (!link.startsWith('http')) {
       //TODO: Assert URL and handle better
-      link = `https://www.youtube.com/c/${encodeURIComponent(link)}`;
+      link = `https://www.youtube.com/channel/${encodeURIComponent(link)}`;
     }
 
     // Step 2: Check if Link Already Exists in Database
@@ -482,20 +376,22 @@ app.post('/add', async (c) => {
       return c.json({ message: 'Link already exists in the database.' });
     }
 
-    // Step 3: Insert New Creator if Link is New
-    const creatorId = await getOrCreateCreator(c.env.DB, handle);
-
     // Step 4: Call handleYouTubeCreator to Extract URLs
     const result = await handleYouTubeCreator(link, c.env.YOUTUBE_API_KEY);
     if (!result.success) {
       console.error('Error in handleYouTubeCreator:', result.error);
-      throw new Error('Failed to retrieve YouTube data.');
+      throw new Error('Failed to retrieve YouTube data.'); //TODO: Handle 403 quota exceeded
     }
 
     // Step 5: Process and Insert Each URL
     const { channelName, urls } = result;
+    // Step 3: Insert New Creator if Link is New
+    const creatorId = await getOrCreateCreator(c.env.DB, channelName);
+    // Add the YouTube channel link we've used
+    await processAndInsertLink(c.env.DB, creatorId, link);
+
     for (const url of urls) {
-      await processAndInsertLink(c.env.DB, creatorId, url, channelName);
+      await processAndInsertLink(c.env.DB, creatorId, url);
     }
     return c.json({ message: 'Creator and links processed successfully' });
   } catch (error) {

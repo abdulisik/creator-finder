@@ -165,7 +165,7 @@ async function processSubscribedChannels(
 ) {
   try {
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=30`, //TODO: handle nextPageToken and increase to 50
+      `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=40`, //TODO: handle nextPageToken and increase to 50
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,

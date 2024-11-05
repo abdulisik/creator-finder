@@ -283,10 +283,7 @@ async function handleYouTubeCreator(
       if (!otherUrls.length) continue;
       if (!urls.length) urls = [...otherUrls];
       urls = urls.filter((url) => otherUrls.includes(url));
-      if (counter++ > 2) break;
-    }
-    if (!urls.length) {
-      return { error: `No URLs found in the videos for ${channelName}` };
+      if (counter++) break;
     }
 
     // Step 4: Return the urls and channel name

@@ -99,20 +99,11 @@ Allow users to toggle between viewing only subscribed creators or all creators i
 
 Make search results more organized by grouping multiple links under the same creator in search results, making it easier to see all profiles from a single creator at once.
 
-#### **5.6 Async Processing and Feedback on OAuth Callback**
+#### **5.6 Display Imported Subscriptions**
 
-- **Objective**: Improve user experience during the YouTube OAuth callback to handle processing time more gracefully.
-- **Tasks**:
-  - Make the /callback endpoint process subscriptions asynchronously, showing a loading indicator.
-  - Redirect to a Completion Page upon processing completion.
+Provide users with a summary of imported channels.
 
-#### **5.7 Display Summary of Imported Subscriptions on Completion Page**
-
-- **Objective**: Provide users with a summary of imported channels.
-- **Tasks**:
-  - On the Completion Page, show a summary list of the imported subscriptions and provide a “Back to Home” option..
-
-#### **5.8 Style and Polish UI Elements**
+#### **5.7 Style and Polish UI Elements**
 
 Polish the UI elements to enhance user experience.
 

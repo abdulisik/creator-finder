@@ -698,23 +698,28 @@ app.get('/search/:query', async (c) => {
   }
 });
 
-// List View Component to Display All Creators
-const ListView = (links: any[]) => html`
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>All Creators</title>
-    </head>
+const ListView = ({ creators, message = 'All creators' }) => html`
+  <html>
     <body>
       ${NavBar()}
-      <h1>All Creators</h1>
+      <h1>${message}</h1>
       <ul>
-        ${links.map(
-          (link) => html`
+        ${creators.map(
+          (creator) => html`
             <li>
-              ${link.name} - ${link.platform}:
-              ${link.handle ? '@' + link.handle : ''} (${link.link})
+              <strong>${creator.name}</strong>
+              <ul>
+                ${creator.links.map(
+                  (link) => html`
+                    <li>
+                      <a href="${link.link}" target="_blank">
+                        ${link.platform}:
+                        ${link.handle ? '@' + link.handle : link.link}
+                      </a>
+                    </li>
+                  `
+                )}
+              </ul>
             </li>
           `
         )}
@@ -730,9 +735,66 @@ app.get('/all', async (c) => {
      JOIN creators ON links.creator_id = creators.id`
   ).all();
 
-  return results.results
-    ? c.html(ListView(results.results))
-    : c.json({ message: 'No creators found.' }, 404);
+  if (!results.results || results.results.length === 0) {
+    return c.json({ message: 'No creators found.' }, 404);
+  }
+
+  // Group links by creator's name
+  const creators = results.results.reduce((acc, row) => {
+    if (!acc[row.name]) {
+      acc[row.name] = { name: row.name, links: [] };
+    }
+    acc[row.name].links.push({
+      platform: row.platform,
+      handle: row.handle,
+      link: row.link,
+    });
+    return acc;
+  }, {});
+
+  // Pass grouped creators to the ListView component
+  return c.html(
+    <ListView creators={Object.values(creators)} message='All creators' />
+  );
+});
+
+app.get('/subscriptions', async (c) => {
+  // Retrieve subscribed creator IDs from the cookie
+  const subscribedIds = (getCookie(c, 'subscribed_creators') || '')
+    .split(',')
+    .map(Number)
+    .filter(Boolean); // Convert to numbers and filter out any invalid values
+
+  // If there are no subscribed IDs, display a message or an empty list
+  if (subscribedIds.length === 0) {
+    return c.html(
+      <ListView creators={[]} message='You have no subscriptions yet.' />
+    );
+  }
+
+  // SQL query to get only subscribed creators based on IDs from the cookie
+  const results = await c.env.DB.prepare(
+    `SELECT creators.name, links.platform, links.handle, links.link
+     FROM creators
+     LEFT JOIN links ON creators.id = links.creator_id
+     WHERE creators.id IN (${subscribedIds.join(',')})
+    `
+  ).all();
+
+  // Group links by creator's name
+  const creators = results.results.reduce((acc, row) => {
+    if (!acc[row.name]) {
+      acc[row.name] = { name: row.name, links: [] };
+    }
+    acc[row.name].links.push({
+      platform: row.platform,
+      handle: row.handle,
+      link: row.link,
+    });
+    return acc;
+  }, {});
+
+  return c.html(<ListView creators={Object.values(creators)} />);
 });
 
 export default app;

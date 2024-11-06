@@ -89,11 +89,7 @@ Provide a brief explanation of key features to guide users.
 
 #### **5.3 Search and Add Creator Bars Separation**
 
-- **Objective**: Resolve issues with combined search and add functionality.
-- **Tasks**:
-  - Separate the search bar and "Add Creator" input to avoid conflicts (e.g., hitting Enter should only trigger search).
-  - Create a new input bar specifically for adding a single creator. Provide clear placeholders to distinguish each function.
-  - Adjust logic so the "Add Creator" function can handle custom handles, channel IDs, or full URLs, depending on the structure provided by the user.
+Separate the search bar and "Add Creator" input to avoid conflicts. Adjust logic so the "Add Creator" function can handle custom handles, channel IDs, or full URLs, depending on the structure provided by the user.
 
 #### **5.4 Search Filtering Toggle (Checkbox)**
 

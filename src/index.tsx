@@ -299,11 +299,11 @@ async function handleYouTubeCreator(
   try {
     // Step 1: Extract Channel ID from YouTube Link
     const channelId = youtubeLink.split('/').pop();
-
+    let apiUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}`;
+    if (channelId?.startsWith('UC')) apiUrl += `&id=${channelId}`;
+    else apiUrl += `&forUsername=${channelId}`;
     // Step 2: Fetch Channel Details (including name and upload playlist ID)
-    const channelResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
-    );
+    const channelResponse = await fetch(apiUrl);
     const channelData = await channelResponse.json();
 
     if (!channelData.items?.length) {
@@ -444,9 +444,16 @@ async function addCreators(c: Context, handles: string[]) {
     try {
       // Step 1: Sanitize and Convert Query to YouTube Link if Necessary
       let link = handle.trim();
-      if (!link.startsWith('http')) {
-        //TODO: Assert URL and handle better
+      if (link.startsWith('http')) {
+        if (!link.includes('youtube.com')) {
+          continue;
+        }
+      } else if (link.startsWith('UC')) {
+        // Assume it’s a channel ID if it starts with 'UC'
         link = `https://www.youtube.com/channel/${encodeURIComponent(link)}`;
+      } else {
+        // Assume it’s a custom handle
+        link = `https://www.youtube.com/${encodeURIComponent(link)}`;
       }
 
       // Step 2: Check if Link Already Exists in Database

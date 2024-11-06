@@ -54,6 +54,9 @@ const HomeView = () => html`
           color: #555;
           margin-bottom: 10px;
         }
+        .input-section {
+          margin-bottom: 15px;
+        }
         input[type='text'] {
           width: 80%;
           padding: 10px;
@@ -84,9 +87,9 @@ const HomeView = () => html`
       </style>
       <script>
         document.addEventListener('DOMContentLoaded', () => {
+          // Search functionality
           const searchInput = document.getElementById('searchInput');
           const resultsContainer = document.getElementById('resultsContainer');
-          const searchForm = document.getElementById('searchForm');
 
           searchInput.addEventListener('input', async (e) => {
             const query = e.target.value;
@@ -101,23 +104,28 @@ const HomeView = () => html`
             }
           });
 
-          searchForm.addEventListener('submit', async (e) => {
+          // Add creator functionality
+          const addCreatorForm = document.getElementById('addCreatorForm');
+          const addCreatorInput = document.getElementById('addCreatorInput');
+
+          addCreatorForm.addEventListener('submit', async (e) => {
             e.preventDefault(); // Prevent page reload on submit
-            const query = searchInput.value;
-            if (query.trim()) {
-              // Submit addition request to the backend
-              await fetch('/add', {
+            const handle = addCreatorInput.value.trim();
+            if (handle) {
+              const response = await fetch('/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ handle: query.trim() }),
+                body: JSON.stringify({ handle }),
               });
-              // alert('Request submitted for processing');
+              alert('Request submitted for processing');
+              addCreatorInput.value = ''; // Clear the input after submission
             }
           });
 
+          // YouTube authorization functionality
           document
             .getElementById('authorizeButton')
-            .addEventListener('click', async () => {
+            .addEventListener('click', () => {
               const clientId =
                 '435034689740-dqkt9rq57tf9e0a0i7j9c0jq0gpnhv7q.apps.googleusercontent.com';
               const redirectUri = window.location.origin + '/callback';
@@ -174,22 +182,37 @@ const HomeView = () => html`
         experience.
       </p>
 
+      <!-- YouTube Authorization Section -->
       <p class="youtube-auth-description">
         To import your subscriptions automatically, click Authorize YouTube
-        Access.”
+        Access:
+        <button id="authorizeButton">Authorize YouTube Access</button>
       </p>
 
-      <!-- YouTube Authorization Button -->
-      <button id="authorizeButton">Authorize YouTube Access</button>
+      <!-- Add Creator Section -->
+      <div class="input-section">
+        <label for="addCreatorInput"
+          ><strong>Add a New Creator by Handle or URL</strong></label
+        >
+        <form id="addCreatorForm">
+          <input
+            type="text"
+            id="addCreatorInput"
+            placeholder="Enter YouTube handle or URL..."
+          />
+          <button type="submit">Add Creator</button>
+        </form>
+      </div>
 
-      <form id="searchForm">
+      <div class="input-section">
+        <label for="searchInput"><strong>Search for Creators</strong></label>
         <input
           type="text"
           id="searchInput"
           placeholder="Search for creators..."
         />
-        <button type="submit">Add Creator</button>
-      </form>
+      </div>
+
       <div id="resultsContainer"></div>
     </body>
   </html>

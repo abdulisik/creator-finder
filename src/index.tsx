@@ -42,57 +42,137 @@ const HomeView = () => html`
       <style>
         body {
           font-family: Arial, sans-serif;
+          background-color: #f4f4f9;
+          color: #333;
           margin: 20px;
           padding: 0;
         }
-        h1 {
-          font-size: 24px;
-        }
-        .description,
-        .youtube-auth-description {
-          font-size: 16px;
-          color: #555;
-          margin-bottom: 10px;
-        }
-        .input-section {
-          margin-bottom: 15px;
-        }
-        input[type='text'] {
-          width: 80%;
-          padding: 10px;
-          margin-bottom: 10px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-        }
-        ul {
-          list-style-type: none;
-          padding: 0;
-        }
-        li {
-          margin: 5px 0;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          background-color: #f9f9f9;
-        }
-        .platform-icon {
-          margin-right: 5px;
-          vertical-align: middle;
-        }
-        nav a {
-          margin-right: 10px;
-          text-decoration: none;
+
+        h1,
+        h2,
+        p {
           color: #333;
         }
+
+        /* Navbar */
         nav {
           text-align: center;
           margin: 20px 0;
         }
-        label {
-          margin-left: 5px;
+
+        nav a {
+          color: #333;
+          text-decoration: none;
+          margin-right: 15px;
+          font-weight: bold;
+        }
+
+        nav a:hover {
+          color: #0073e6;
+          text-decoration: underline;
+        }
+
+        /* Input fields */
+        input[type='text'],
+        input[type='checkbox'] {
+          width: 75%;
+          padding: 10px;
+          margin: 10px 0;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.1);
+          transition: all 0.2s ease-in-out;
+        }
+
+        input[type='text']:focus {
+          border-color: #0073e6;
+          box-shadow: inset 1px 1px 6px rgba(0, 0, 0, 0.15);
+          outline: none;
+        }
+
+        /* Buttons */
+        button {
+          padding: 10px 15px;
+          background-color: #0073e6;
+          color: #fff;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+          transition: background-color 0.2s ease-in-out,
+            box-shadow 0.2s ease-in-out;
+        }
+
+        button:hover {
+          background-color: #005bb5;
+          box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Lists and Links */
+        ul {
+          list-style: none;
+          padding: 0;
+        }
+
+        li {
+          background-color: #ffffff;
+          margin: 5px 0;
+          padding: 5px;
+          border-radius: 8px;
+          box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+          transition: box-shadow 0.2s ease-in-out;
+        }
+
+        li:hover {
+          box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        a {
+          color: #0073e6;
+          text-decoration: none;
+        }
+
+        a:hover {
+          text-decoration: underline;
+        }
+
+        /* Spinner for Loading */
+        .spinner {
+          width: 50px;
+          height: 50px;
+          border: 5px solid #ddd;
+          border-top-color: #0073e6;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 20px auto;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        .description {
+          margin-bottom: 20px;
+        }
+        /* Align checkbox and label */
+        .input-section {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        input[type='checkbox'] {
+          margin-right: 5px;
+          transform: scale(1.2); /* Make checkbox slightly larger */
+        }
+
+        label[for='filterCheckbox'] {
           font-size: 14px;
         }
       </style>
+
       <script>
         document.addEventListener('DOMContentLoaded', () => {
           // Search functionality

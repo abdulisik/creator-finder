@@ -1,6 +1,7 @@
-import { Hono } from 'hono';
+import { Context, Hono } from 'hono';
 import { html } from 'hono/html';
 import fetch from 'node-fetch';
+import { setCookie, getCookie } from 'hono/cookie';
 
 type Bindings = {
   DB: D1Database;
@@ -81,7 +82,7 @@ const HomeView = () => (
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ handle: query.trim() }),
                 });
-                alert('Request submitted for processing');
+                // alert('Request submitted for processing');
               }
             });
 
@@ -158,11 +159,7 @@ const HomeView = () => (
 // Route to Serve Home View
 app.get('/', (c) => c.html(<HomeView />));
 
-async function processSubscribedChannels(
-  db: D1Database,
-  accessToken: string,
-  youtubeApiKey: string
-) {
+async function processSubscribedChannels(c: Context, accessToken: string) {
   try {
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=40`, //TODO: handle nextPageToken and increase to 50
@@ -180,18 +177,14 @@ async function processSubscribedChannels(
       return { error: 'No subscriptions found or insufficient permissions' };
     }
 
-    const processedTitles = [];
+    // Collect channel IDs and titles
+    const channelIds = data.items.map(
+      (item) => item.snippet.resourceId.channelId
+    );
+    const processedTitles = data.items.map((item) => item.snippet.title);
 
-    for (const item of data.items) {
-      const channelId = item.snippet.resourceId.channelId;
-      const channelTitle = item.snippet.title;
-
-      // Call addCreator function directly instead of posting to /add
-      await addCreator(db, channelId, youtubeApiKey);
-
-      // Add channel title to processedTitles
-      processedTitles.push(channelTitle);
-    }
+    // Batch add creators
+    await addCreators(c, channelIds);
 
     return { success: true, processedTitles };
   } catch (error) {
@@ -226,11 +219,7 @@ app.get('/callback', async (c) => {
     return c.json({ error: 'Failed to obtain access token' });
   }
 
-  const response = await processSubscribedChannels(
-    c.env.DB,
-    tokenData.access_token,
-    c.env.YOUTUBE_API_KEY
-  );
+  const response = await processSubscribedChannels(c, tokenData.access_token);
 
   return c.json(response);
 });
@@ -314,24 +303,21 @@ async function processAndInsertLink(
       .first();
 
     if (!domainCheck) {
-      await db
-        .prepare(
-          `INSERT INTO domains (domain, platform, quantity) VALUES (?, ?, 1)`
-        )
+      db.prepare(
+        `INSERT INTO domains (domain, platform, quantity) VALUES (?, ?, 1)`
+      )
         .bind(domain, platform)
         .run();
     } else {
-      await db
-        .prepare(`UPDATE domains SET quantity = quantity + 1 WHERE domain = ?`)
+      db.prepare(`UPDATE domains SET quantity = quantity + 1 WHERE domain = ?`)
         .bind(domain)
         .run();
     }
 
     // Insert link into links table
-    await db
-      .prepare(
-        `INSERT INTO links (creator_id, platform, link, discovered_on) VALUES (?, ?, ?, ?)`
-      )
+    db.prepare(
+      `INSERT INTO links (creator_id, platform, link, discovered_on) VALUES (?, ?, ?, ?)`
+    )
       .bind(creatorId, platform, url, platform)
       .run();
 
@@ -340,6 +326,21 @@ async function processAndInsertLink(
     console.error('Error in processAndInsertLink:', error);
     return { error: 'Failed to insert link' };
   }
+}
+
+async function addCreatorToCookie(c: Context, creatorIds: number[]) {
+  // Get the current subscribed creator IDs from the cookie
+  const subscribedIds = new Set(
+    getCookie(c, 'subscribed_creators')?.split(',').map(Number) || []
+  );
+
+  // Add each new creator ID to the set
+  creatorIds.forEach((id) => subscribedIds.add(id));
+
+  // Update the cookie with the new list
+  setCookie(c, 'subscribed_creators', Array.from(subscribedIds).join(','), {
+    path: '/',
+  });
 }
 
 app.post('/add', async (c) => {
@@ -358,55 +359,72 @@ app.post('/add', async (c) => {
   }
 
   try {
-    const response = await addCreator(c.env.DB, handle, c.env.YOUTUBE_API_KEY);
-    return c.json(response);
+    const result = await addCreators(c, [handle]);
+
+    if (!result.success) {
+      return c.json({ error: result.error || 'Unknown error' }, 500);
+    }
+
+    return c.json({
+      message: 'Creator and links processed successfully',
+      creatorId: result.creatorId,
+    });
   } catch (error) {
     console.error('Error in /add endpoint:', error);
     return c.json({ error: error.message || 'Unknown error occurred' }, 500);
   }
 });
 
-// This function encapsulates the /add logic
-async function addCreator(
-  db: D1Database,
-  handle: string,
-  youtubeApiKey: string
-) {
-  // Sanitize and convert to YouTube link if necessary
-  let link = handle.trim();
-  if (!link.startsWith('http')) {
-    //TODO: Assert URL and handle better
-    link = `https://www.youtube.com/channel/${encodeURIComponent(link)}`;
+async function addCreators(c: Context, handles: string[]) {
+  const db = c.env.DB;
+  const addedCreatorIds: number[] = [];
+  for (const handle of handles) {
+    try {
+      // Step 1: Sanitize and Convert Query to YouTube Link if Necessary
+      let link = handle.trim();
+      if (!link.startsWith('http')) {
+        //TODO: Assert URL and handle better
+        link = `https://www.youtube.com/channel/${encodeURIComponent(link)}`;
+      }
+
+      // Step 2: Check if Link Already Exists in Database
+      const existingLink = await db
+        .prepare(`SELECT creator_id FROM links WHERE link = ?`)
+        .bind(link)
+        .first();
+
+      if (existingLink) {
+        addedCreatorIds.push(existingLink.creator_id);
+        continue;
+      }
+
+      // Step 3: Call handleYouTubeCreator to Extract URLs
+      const result = await handleYouTubeCreator(link, c.env.YOUTUBE_API_KEY);
+      if (!result.success) {
+        console.error('Error in handleYouTubeCreator:', result.error);
+        continue; //TODO: Handle 403 quota exceeded
+      }
+
+      // Step 4: Insert New Creator if Link is New
+      const { channelName, urls } = result;
+      const creatorId = await getOrCreateCreator(db, channelName ?? handle);
+
+      // Step 5: Insert the main YouTube link we've used
+      await processAndInsertLink(db, creatorId, link);
+
+      // Step 6: Process and Insert Each Extracted URL
+      for (const url of urls) {
+        await processAndInsertLink(db, creatorId, url);
+      }
+      addedCreatorIds.push(creatorId);
+    } catch (error) {
+      console.error('Error in addCreator:', error);
+    }
   }
+  // Update the cookie with all added creator IDs
+  await addCreatorToCookie(c, addedCreatorIds);
 
-  // Check if Link Already Exists in Database
-  const existingLink = await db
-    .prepare(`SELECT id FROM links WHERE link = ?`)
-    .bind(link)
-    .first();
-
-  if (existingLink) {
-    return { message: 'Link already exists in the database.' };
-  }
-
-  // Call handleYouTubeCreator to Extract URLs
-  const result = await handleYouTubeCreator(link, youtubeApiKey);
-  if (!result.success) {
-    console.error('Error in handleYouTubeCreator:', result.error);
-    return { message: 'Failed to retrieve YouTube data.' }; //TODO: Handle 403 quota exceeded
-  }
-
-  // Process and Insert Each URL
-  const { channelName, urls } = result;
-  const creatorId = await getOrCreateCreator(db, channelName ?? handle);
-
-  // Add the YouTube channel link used
-  await processAndInsertLink(db, creatorId, link);
-
-  for (const url of urls) {
-    await processAndInsertLink(db, creatorId, url);
-  }
-  return { message: 'Creator and links processed successfully' };
+  return { success: true, creatorIds: addedCreatorIds };
 }
 
 // Utility function to insert or get existing creator
@@ -428,19 +446,30 @@ async function getOrCreateCreator(db: D1Database, name: string) {
   return newCreator?.id;
 }
 
-// Search Route
 app.get('/search/:query', async (c) => {
   try {
     const query = c.req.param('query') || '';
-    const results = await c.env.DB.prepare(
-      `SELECT creators.name,
-              links.platform,
-              links.handle,
-              links.link
-       FROM creators
-       LEFT JOIN links ON creators.id = links.creator_id
-       WHERE creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?`
-    )
+    const subscribedCookie = getCookie(c, 'subscribed_creators') ?? '';
+    const subscribedIds = subscribedCookie
+      .split(',')
+      .filter(Boolean)
+      .map(Number);
+
+    // Base SQL query
+    let sql = `SELECT creators.name,
+                      links.platform,
+                      links.handle,
+                      links.link
+               FROM creators
+               LEFT JOIN links ON creators.id = links.creator_id
+               WHERE (creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?)`;
+
+    // If we have subscribed IDs, restrict results to those IDs
+    if (subscribedIds.length > 0) {
+      sql += ` AND creators.id IN (${subscribedIds.join(',')})`;
+    }
+
+    const results = await c.env.DB.prepare(sql)
       .bind(`%${query}%`, `%${query}%`, `%${query}%`)
       .all();
 

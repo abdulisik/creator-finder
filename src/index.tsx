@@ -10,9 +10,6 @@ type Bindings = {
   YOUTUBE_CLIENT_SECRET: string;
 };
 
-const baseURL =
-  'https://creator-finder.abdulisik.workers.dev';
-  // 'http://localhost:8787';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -91,10 +88,7 @@ const HomeView = () => (
               .addEventListener('click', async () => {
                 const clientId =
                   '435034689740-dqkt9rq57tf9e0a0i7j9c0jq0gpnhv7q.apps.googleusercontent.com';
-                const redirectUri =
-                  // 'http://localhost:8787'+
-                  'https://creator-finder.abdulisik.workers.dev'+
-                  '/callback';
+                const redirectUri = window.location.origin + '/callback';
                 const scope =
                   'https://www.googleapis.com/auth/youtube.readonly';
 
@@ -208,7 +202,7 @@ app.get('/callback', async (c) => {
       code,
       client_id: c.env.YOUTUBE_CLIENT_ID,
       client_secret: c.env.YOUTUBE_CLIENT_SECRET,
-      redirect_uri: `${baseURL}/callback`,
+      redirect_uri: `${url.origin}/callback`,
       grant_type: 'authorization_code',
     }),
   });

@@ -75,6 +75,67 @@ User Story: As a user, I want to save the list of creators I follow and search f
 
 Objective: Introduce lightweight user management by using cookies to store each user's subscribed creators. This approach allows users to maintain a personalized experience without requiring formal account creation.
 
+### **Milestone 5: Basic UI Improvements**
+
+User Story: What is this app anyway?
+
+#### **5.1 Navigation Bar Enhancement**
+
+- **Objective**: Improve navigation across pages.
+- **Tasks**:
+  - Add a simple nav bar with links to "Home", "View All Creators", and "My Subscriptions" on the `/all` page (similar to the Home page).
+  - Ensure the nav bar is responsive and visible on both desktop and mobile.
+
+#### **5.2 Home Page Descriptions and Text**
+
+- **Objective**: Provide a brief explanation of key features to guide users.
+- **Tasks**:
+  - Add a description explaining the purpose of the app and the main features on the Home page.
+  - Include a short blurb for "Authorize with YouTube", clarifying its function and benefits.
+
+#### **5.3 Search and Add Creator Bars Separation**
+
+- **Objective**: Resolve issues with combined search and add functionality.
+- **Tasks**:
+  - Separate the search bar and "Add Creator" input to avoid conflicts (e.g., hitting Enter should only trigger search).
+  - Create a new input bar specifically for adding a single creator. Provide clear placeholders to distinguish each function.
+  - Adjust logic so the "Add Creator" function can handle custom handles, channel IDs, or full URLs, depending on the structure provided by the user.
+
+#### **5.4 Search Filtering Toggle (Checkbox)**
+
+- **Objective**: Allow users to toggle between viewing only subscribed creators or all creators in search results.
+- **Tasks**:
+  - Add a checkbox next to the search bar labeled “Show only my subscribed creators.”
+  - Update the search query to respect this checkbox and filter results accordingly.
+
+#### **5.5 Display Improvements for Search Results**
+
+- **Objective**: Make search results more glanceable and organized.
+- **Tasks**:
+  - Group multiple links under the same creator in search results, making it easier to see all profiles from a single creator at once.
+  - Add platform icons (e.g., YouTube, Patreon) next to links to make each platform identifiable at a glance (using simple SVGs or icons if feasible).
+
+#### **5.6 Async Processing and Feedback on OAuth Callback**
+
+- **Objective**: Improve user experience during the YouTube OAuth callback to handle processing time more gracefully.
+- **Tasks**:
+  - Make the /callback endpoint process subscriptions asynchronously, showing a loading indicator.
+  - Redirect to a Completion Page upon processing completion.
+
+#### **5.7 Display Summary of Imported Subscriptions on Completion Page**
+
+- **Objective**: Provide users with a summary of imported channels.
+- **Tasks**:
+  - On the Completion Page, show a summary list of the imported subscriptions and provide a “Back to Home” option..
+
+#### **5.8 Style and Polish UI Elements**
+
+- **Objective**: Add final polish to UI elements to enhance user experience.
+- **Tasks**:
+  - Style the search bar, input fields, and buttons with subtle CSS improvements (e.g., rounded edges, shadows).
+  - Add hover effects on buttons and links for a more interactive experience.
+  - Ensure consistency across pages in terms of font, colors, and spacing for a cohesive look.
+
 ## SWOT Analysis
 
 ### Strengths

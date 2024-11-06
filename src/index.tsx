@@ -88,25 +88,35 @@ const HomeView = () => html`
           text-align: center;
           margin: 20px 0;
         }
+        label {
+          margin-left: 5px;
+          font-size: 14px;
+        }
       </style>
       <script>
         document.addEventListener('DOMContentLoaded', () => {
           // Search functionality
           const searchInput = document.getElementById('searchInput');
           const resultsContainer = document.getElementById('resultsContainer');
+          const filterCheckbox = document.getElementById('filterCheckbox');
 
-          searchInput.addEventListener('input', async (e) => {
-            const query = e.target.value;
+          async function performSearch() {
+            const query = searchInput.value;
+            const filter = filterCheckbox.checked ? 'subscribed' : 'all';
+
             if (query.length > 2) {
               const response = await fetch(
-                '/search/' + encodeURIComponent(query)
+                '/search/' + encodeURIComponent(query) + '?filter=' + filter
               );
               const creators = await response.json();
               displayResults(creators);
             } else {
               resultsContainer.innerHTML = ''; // Clear results if query is too short
             }
-          });
+          }
+
+          searchInput.addEventListener('input', performSearch);
+          filterCheckbox.addEventListener('change', performSearch);
 
           // Add creator functionality
           const addCreatorForm = document.getElementById('addCreatorForm');
@@ -174,7 +184,6 @@ const HomeView = () => html`
             // Step 2: Generate HTML for grouped creators
             const html = Object.values(groupedCreators)
               .map(function (creator) {
-                // Generate HTML for each creator’s links
                 const linksHtml = creator.links
                   .map(function (link) {
                     const platformIcon = getPlatformIcon(link.platform);
@@ -189,9 +198,8 @@ const HomeView = () => html`
                       '</a></li>'
                     );
                   })
-                  .join(''); // Join links for each creator
+                  .join('');
 
-                // Wrap each creator and their links in a list item
                 return (
                   '<li><strong>' +
                   creator.name +
@@ -202,9 +210,6 @@ const HomeView = () => html`
               })
               .join('');
 
-            console.log('Final HTML:', html); // Log the final HTML string
-
-            // Update results container
             resultsContainer.innerHTML = '<ul>' + html + '</ul>';
           }
 
@@ -268,8 +273,10 @@ const HomeView = () => html`
           id="searchInput"
           placeholder="Search for creators..."
         />
+        <input type="checkbox" id="filterCheckbox" />
+        <label for="filterCheckbox">Show only my subscribed creators</label>
       </div>
-
+      <!-- Results and Search Section -->
       <div id="resultsContainer"></div>
     </body>
   </html>
@@ -575,6 +582,7 @@ async function getOrCreateCreator(db: D1Database, name: string) {
 app.get('/search/:query', async (c) => {
   try {
     const query = c.req.param('query') || '';
+    const filter = c.req.query('filter');
     const subscribedCookie = getCookie(c, 'subscribed_creators') ?? '';
     const subscribedIds = subscribedCookie
       .split(',')
@@ -591,7 +599,7 @@ app.get('/search/:query', async (c) => {
                WHERE (creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?)`;
 
     // If we have subscribed IDs, restrict results to those IDs
-    if (subscribedIds.length > 0) {
+    if (filter === 'subscribed' && subscribedIds.length > 0) {
       sql += ` AND creators.id IN (${subscribedIds.join(',')})`;
     }
 

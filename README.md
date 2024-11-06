@@ -93,10 +93,7 @@ Separate the search bar and "Add Creator" input to avoid conflicts. Adjust logic
 
 #### **5.4 Search Filtering Toggle (Checkbox)**
 
-- **Objective**: Allow users to toggle between viewing only subscribed creators or all creators in search results.
-- **Tasks**:
-  - Add a checkbox next to the search bar labeled “Show only my subscribed creators.”
-  - Update the search query to respect this checkbox and filter results accordingly.
+Allow users to toggle between viewing only subscribed creators or all creators in search results.
 
 #### **5.5 Display Improvements for Search Results**
 

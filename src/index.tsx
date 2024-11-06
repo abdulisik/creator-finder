@@ -442,7 +442,7 @@ async function handleYouTubeCreator(
 ) {
   try {
     // Step 1: Extract Channel ID from YouTube Link
-    const channelId = youtubeLink.split('/').pop();
+    const channelId = youtubeLink.split('/').pop()?.replace('@', '');
     let apiUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}`;
     if (channelId?.startsWith('UC')) apiUrl += `&id=${channelId}`;
     else apiUrl += `&forUsername=${channelId}`;
@@ -457,7 +457,7 @@ async function handleYouTubeCreator(
 
     const channel = channelData.items[0];
     const channelName = channel.snippet.title;
-    const uploadPlaylistId = channel.contentDetails.relatedPlaylists.uploads;
+    const uploadPlaylistId = channel.contentDetails.relatedPlaylists.uploads; //TODO: Playlist is sometimes empty, check @spaceX for example
 
     // Step 3: Get the latest videos from the playlist
     const videoResponse = await fetch(

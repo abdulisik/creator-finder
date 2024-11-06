@@ -69,6 +69,12 @@ Implement a method to automatically handle link insertion, classifying URLs by d
 
 Integrate YouTube OAuth to retrieve a user’s subscriptions, extracting details to auto-populate creator profiles.
 
+### **Milestone 4: Basic User Management (Cookie-Based Subscriptions)**
+
+User Story: As a user, I want to save the list of creators I follow and search for links from those creators.
+
+Objective: Introduce lightweight user management by using cookies to store each user's subscribed creators. This approach allows users to maintain a personalized experience without requiring formal account creation.
+
 ## SWOT Analysis
 
 ### Strengths

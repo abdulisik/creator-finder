@@ -13,6 +13,27 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+const NavBar = () => html`
+  <nav>
+    <a href="/">Home</a> | <a href="/all">View All Creators</a> |
+    <a href="/subscriptions">My Subscriptions</a>
+  </nav>
+  <style>
+    nav {
+      text-align: center;
+      margin: 20px 0;
+    }
+    nav a {
+      margin: 0 10px;
+      text-decoration: none;
+      color: #333;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+  </style>
+`;
+
 // Home View Component
 const HomeView = () => (
   <html lang='en'>
@@ -21,11 +42,6 @@ const HomeView = () => (
       <meta name='viewport' content='width=device-width, initial-scale=1.0' />
       <title>Creator Finder</title>
       <style>{`
-        body {
-          font-family: Arial, sans-serif;
-          margin: 20px;
-          padding: 0;
-        }
         input[type="text"] {
           width: 80%;
           padding: 10px;
@@ -43,9 +59,6 @@ const HomeView = () => (
           border: 1px solid #ddd;
           border-radius: 4px;
           background-color: #f9f9f9;
-        }
-        nav a {
-          margin-right: 10px;
         }
       `}</style>
       {html`
@@ -131,9 +144,7 @@ const HomeView = () => (
       `}
     </head>
     <body>
-      <nav>
-        <a href='/'>Home</a> | <a href='/all'>View All Creators</a>
-      </nav>
+      {NavBar()}
       <h1>Find and Add Creators</h1>
       <form id='searchForm'>
         <button id='authorizeButton'>Authorize YouTube Access</button>
@@ -480,9 +491,15 @@ app.get('/search/:query', async (c) => {
 
 // List View Component to Display All Creators
 const ListView = (links: any[]) => html`
-  <html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>All Creators</title>
+    </head>
     <body>
-      <h1>Creators and Links</h1>
+      ${NavBar()}
+      <h1>All Creators</h1>
       <ul>
         ${links.map(
           (link) => html`

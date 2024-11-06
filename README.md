@@ -81,10 +81,7 @@ User Story: What is this app anyway?
 
 #### **5.1 Navigation Bar Enhancement**
 
-- **Objective**: Improve navigation across pages.
-- **Tasks**:
-  - Add a simple nav bar with links to "Home", "View All Creators", and "My Subscriptions" on the `/all` page (similar to the Home page).
-  - Ensure the nav bar is responsive and visible on both desktop and mobile.
+Improve navigation across pages by adding a simple nav bar.
 
 #### **5.2 Home Page Descriptions and Text**
 

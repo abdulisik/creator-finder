@@ -211,7 +211,7 @@ const HomeView = () => html`
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ handle }),
               });
-              alert('Request submitted for processing');
+              alert(JSON.stringify(await response.json()));
               addCreatorInput.value = ''; // Clear the input after submission
             }
           });
@@ -584,6 +584,7 @@ app.post('/add', async (c) => {
 async function addCreators(c: Context, handles: string[]) {
   const db = c.env.DB;
   const addedCreatorIds: number[] = [];
+  let errorMessage = '';
   for (const handle of handles) {
     try {
       // Step 1: Sanitize and Convert Query to YouTube Link if Necessary
@@ -615,6 +616,7 @@ async function addCreators(c: Context, handles: string[]) {
       const result = await handleYouTubeCreator(link, c.env.YOUTUBE_API_KEY);
       if (!result.success) {
         console.error('Error in handleYouTubeCreator:', result.error);
+        errorMessage += result.error || 'Unknown error';
         continue; //TODO: Handle 403 quota exceeded
       }
 
@@ -632,11 +634,14 @@ async function addCreators(c: Context, handles: string[]) {
       addedCreatorIds.push(creatorId);
     } catch (error) {
       console.error('Error in addCreator:', error);
+      errorMessage += error.message || 'Unknown error';
     }
   }
   // Update the cookie with all added creator IDs
   await addCreatorToCookie(c, addedCreatorIds);
-
+  if (errorMessage) {
+    return { success: false, error: errorMessage };
+  }
   return { success: true, creatorIds: addedCreatorIds };
 }
 

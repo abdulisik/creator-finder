@@ -10,7 +10,6 @@ type Bindings = {
   YOUTUBE_CLIENT_SECRET: string;
 };
 
-
 const app = new Hono<{ Bindings: Bindings }>();
 
 const NavBar = () => html`
@@ -34,15 +33,28 @@ const NavBar = () => html`
   </style>
 `;
 
-// Home View Component
-const HomeView = () => (
-  <html lang='en'>
+const HomeView = () => html`
+  <html lang="en">
     <head>
-      <meta charset='UTF-8' />
-      <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Creator Finder</title>
-      <style>{`
-        input[type="text"] {
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+          padding: 0;
+        }
+        h1 {
+          font-size: 24px;
+        }
+        .description,
+        .youtube-auth-description {
+          font-size: 16px;
+          color: #555;
+          margin-bottom: 10px;
+        }
+        input[type='text'] {
           width: 80%;
           padding: 10px;
           margin-bottom: 10px;
@@ -60,106 +72,128 @@ const HomeView = () => (
           border-radius: 4px;
           background-color: #f9f9f9;
         }
-      `}</style>
-      {html`
-        <script>
-          document.addEventListener('DOMContentLoaded', () => {
-            const searchInput = document.getElementById('searchInput');
-            const resultsContainer =
-              document.getElementById('resultsContainer');
-            const searchForm = document.getElementById('searchForm');
+        nav a {
+          margin-right: 10px;
+          text-decoration: none;
+          color: #333;
+        }
+        nav {
+          text-align: center;
+          margin: 20px 0;
+        }
+      </style>
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const searchInput = document.getElementById('searchInput');
+          const resultsContainer = document.getElementById('resultsContainer');
+          const searchForm = document.getElementById('searchForm');
 
-            searchInput.addEventListener('input', async (e) => {
-              const query = e.target.value;
-              if (query.length > 2) {
-                const response = await fetch(
-                  '/search/' + encodeURIComponent(query)
-                );
-                const creators = await response.json();
-                displayResults(creators);
-              } else {
-                resultsContainer.innerHTML = ''; // Clear results if query is too short
-              }
-            });
-
-            searchForm.addEventListener('submit', async (e) => {
-              e.preventDefault(); // Prevent page reload on submit
-              const query = searchInput.value;
-              if (query.trim()) {
-                // Submit addition request to the backend
-                await fetch('/add', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ handle: query.trim() }),
-                });
-                // alert('Request submitted for processing');
-              }
-            });
-
-            document
-              .getElementById('authorizeButton')
-              .addEventListener('click', async () => {
-                const clientId =
-                  '435034689740-dqkt9rq57tf9e0a0i7j9c0jq0gpnhv7q.apps.googleusercontent.com';
-                const redirectUri = window.location.origin + '/callback';
-                const scope =
-                  'https://www.googleapis.com/auth/youtube.readonly';
-
-                const authUrl =
-                  'https://accounts.google.com/o/oauth2/auth' +
-                  '?client_id=' +
-                  encodeURIComponent(clientId) +
-                  '&redirect_uri=' +
-                  encodeURIComponent(redirectUri) +
-                  '&response_type=' +
-                  encodeURIComponent('code') +
-                  '&scope=' +
-                  encodeURIComponent(scope);
-
-                window.location.href = authUrl; // Redirects to Google's OAuth consent screen
-              });
-
-            function displayResults(creators) {
-              const html = creators
-                .map(function (creator) {
-                  return (
-                    '<li>' +
-                    creator.name +
-                    ' - ' +
-                    '<a href="' +
-                    creator.link +
-                    '" target="_blank">' +
-                    creator.platform +
-                    (creator.handle ? ': @' + creator.handle : '') +
-                    '</a>' +
-                    '</li>'
-                  );
-                })
-                .join('');
-
-              resultsContainer.innerHTML = '<ul>' + html + '</ul>';
+          searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value;
+            if (query.length > 2) {
+              const response = await fetch(
+                '/search/' + encodeURIComponent(query)
+              );
+              const creators = await response.json();
+              displayResults(creators);
+            } else {
+              resultsContainer.innerHTML = ''; // Clear results if query is too short
             }
           });
-        </script>
-      `}
+
+          searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent page reload on submit
+            const query = searchInput.value;
+            if (query.trim()) {
+              // Submit addition request to the backend
+              await fetch('/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ handle: query.trim() }),
+              });
+              // alert('Request submitted for processing');
+            }
+          });
+
+          document
+            .getElementById('authorizeButton')
+            .addEventListener('click', async () => {
+              const clientId =
+                '435034689740-dqkt9rq57tf9e0a0i7j9c0jq0gpnhv7q.apps.googleusercontent.com';
+              const redirectUri = window.location.origin + '/callback';
+              const scope = 'https://www.googleapis.com/auth/youtube.readonly';
+
+              const authUrl =
+                'https://accounts.google.com/o/oauth2/auth' +
+                '?client_id=' +
+                encodeURIComponent(clientId) +
+                '&redirect_uri=' +
+                encodeURIComponent(redirectUri) +
+                '&response_type=' +
+                encodeURIComponent('code') +
+                '&scope=' +
+                encodeURIComponent(scope);
+
+              window.location.href = authUrl; // Redirects to Google's OAuth consent screen
+            });
+
+          function displayResults(creators) {
+            const html = creators
+              .map(function (creator) {
+                return (
+                  '<li>' +
+                  creator.name +
+                  ' - ' +
+                  '<a href="' +
+                  creator.link +
+                  '" target="_blank">' +
+                  creator.platform +
+                  (creator.handle ? ': @' + creator.handle : '') +
+                  '</a>' +
+                  '</li>'
+                );
+              })
+              .join('');
+
+            resultsContainer.innerHTML = '<ul>' + html + '</ul>';
+          }
+        });
+      </script>
     </head>
     <body>
-      {NavBar()}
-      <h1>Find and Add Creators</h1>
-      <form id='searchForm'>
-        <button id='authorizeButton'>Authorize YouTube Access</button>
-        <br />
+      ${NavBar()}
+      <!-- Insert NavBar at the top -->
+
+      <h1>Welcome to Creator Finder</h1>
+
+      <p class="description">
+        Creator Finder is a tool that helps you discover and organize the
+        creators you follow across different platforms, like YouTube and
+        Patreon. Use the search bar to find creators or add new ones manually.
+        You can even import your YouTube subscriptions for a seamless
+        experience.
+      </p>
+
+      <p class="youtube-auth-description">
+        To import your subscriptions automatically, click Authorize YouTube
+        Access.”
+      </p>
+
+      <!-- YouTube Authorization Button -->
+      <button id="authorizeButton">Authorize YouTube Access</button>
+
+      <form id="searchForm">
         <input
-          type='text'
-          id='searchInput'
-          placeholder='Search or add a YouTube handle...'
+          type="text"
+          id="searchInput"
+          placeholder="Search for creators..."
         />
-        <button type='submit'>Add Creator</button>
+        <button type="submit">Add Creator</button>
       </form>
-      <div id='resultsContainer'></div>
+      <div id="resultsContainer"></div>
     </body>
   </html>
-);
+`;
 
 // Route to Serve Home View
 app.get('/', (c) => c.html(<HomeView />));

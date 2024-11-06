@@ -85,10 +85,7 @@ Improve navigation across pages by adding a simple nav bar.
 
 #### **5.2 Home Page Descriptions and Text**
 
-- **Objective**: Provide a brief explanation of key features to guide users.
-- **Tasks**:
-  - Add a description explaining the purpose of the app and the main features on the Home page.
-  - Include a short blurb for "Authorize with YouTube", clarifying its function and benefits.
+Provide a brief explanation of key features to guide users.
 
 #### **5.3 Search and Add Creator Bars Separation**
 

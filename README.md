@@ -100,10 +100,7 @@ Separate the search bar and "Add Creator" input to avoid conflicts. Adjust logic
 
 #### **5.5 Display Improvements for Search Results**
 
-- **Objective**: Make search results more glanceable and organized.
-- **Tasks**:
-  - Group multiple links under the same creator in search results, making it easier to see all profiles from a single creator at once.
-  - Add platform icons (e.g., YouTube, Patreon) next to links to make each platform identifiable at a glance (using simple SVGs or icons if feasible).
+Make search results more organized by grouping multiple links under the same creator in search results, making it easier to see all profiles from a single creator at once.
 
 #### **5.6 Async Processing and Feedback on OAuth Callback**
 

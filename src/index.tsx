@@ -75,6 +75,10 @@ const HomeView = () => html`
           border-radius: 4px;
           background-color: #f9f9f9;
         }
+        .platform-icon {
+          margin-right: 5px;
+          vertical-align: middle;
+        }
         nav a {
           margin-right: 10px;
           text-decoration: none;
@@ -146,24 +150,78 @@ const HomeView = () => html`
             });
 
           function displayResults(creators) {
-            const html = creators
+            console.log('Creators data received:', creators); // Log the creators data
+
+            if (!Array.isArray(creators) || creators.length === 0) {
+              console.warn('No creators to display.'); // Log a warning if no creators
+              resultsContainer.innerHTML = '<p>No results found.</p>';
+              return;
+            }
+
+            // Step 1: Group links by creator name
+            const groupedCreators = creators.reduce(function (acc, creator) {
+              if (!acc[creator.name]) {
+                acc[creator.name] = { name: creator.name, links: [] };
+              }
+              acc[creator.name].links.push({
+                platform: creator.platform,
+                handle: creator.handle,
+                link: creator.link,
+              });
+              return acc;
+            }, {});
+
+            // Step 2: Generate HTML for grouped creators
+            const html = Object.values(groupedCreators)
               .map(function (creator) {
+                // Generate HTML for each creator’s links
+                const linksHtml = creator.links
+                  .map(function (link) {
+                    const platformIcon = getPlatformIcon(link.platform);
+                    return (
+                      '<li>' +
+                      platformIcon +
+                      ' <a href="' +
+                      link.link +
+                      '" target="_blank">' +
+                      link.platform +
+                      (link.handle ? ': @' + link.handle : '') +
+                      '</a></li>'
+                    );
+                  })
+                  .join(''); // Join links for each creator
+
+                // Wrap each creator and their links in a list item
                 return (
-                  '<li>' +
+                  '<li><strong>' +
                   creator.name +
-                  ' - ' +
-                  '<a href="' +
-                  creator.link +
-                  '" target="_blank">' +
-                  creator.platform +
-                  (creator.handle ? ': @' + creator.handle : '') +
-                  '</a>' +
-                  '</li>'
+                  '</strong><ul>' +
+                  linksHtml +
+                  '</ul></li>'
                 );
               })
               .join('');
 
+            console.log('Final HTML:', html); // Log the final HTML string
+
+            // Update results container
             resultsContainer.innerHTML = '<ul>' + html + '</ul>';
+          }
+
+          // Helper function to get platform icon emoji
+          function getPlatformIcon(platform) {
+            switch (platform.toLowerCase()) {
+              case 'youtube':
+                return '📺';
+              case 'patreon':
+                return '🎉';
+              case 'twitter':
+                return '🐦';
+              case 'instagram':
+                return '📸';
+              default:
+                return '🔗';
+            }
           }
         });
       </script>
@@ -182,7 +240,6 @@ const HomeView = () => html`
         experience.
       </p>
 
-      <!-- YouTube Authorization Section -->
       <p class="youtube-auth-description">
         To import your subscriptions automatically, click Authorize YouTube
         Access:

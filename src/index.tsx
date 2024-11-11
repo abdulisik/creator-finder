@@ -661,7 +661,6 @@ async function handleYouTubeCreator(
     // Step 4: Return the urls and channel name
     return { success: true, channelName, urls };
   } catch (error) {
-    console.error('Error in handleYouTubeCreator:', error);
     return { error: error };
   }
 }
@@ -865,6 +864,8 @@ app.get('/search/:query', async (c) => {
     if (filter === 'subscribed' && subscribedIds.length > 0) {
       sql += ` AND creators.id IN (${subscribedIds.join(',')})`;
     }
+
+    sql += ` ORDER BY creators.name`;
 
     const results = await c.env.DB.prepare(sql)
       .bind(`%${query}%`, `%${query}%`, `%${query}%`)

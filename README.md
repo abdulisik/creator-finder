@@ -107,6 +107,12 @@ Provide users with a summary of imported channels.
 
 Polish the UI elements to enhance user experience.
 
+### **Milestone 6: Process All Subscribed YouTube Channels**
+
+User Story: As a user, I want the app to automatically process and display all my subscribed YouTube channels, so I can easily see which of my subscriptions have connected profiles across platforms.
+
+Objective: Process all YouTube subscriptions in batches, handling one page of results at a time. Implement feedback and redirection for a smooth user experience, handling API limits and errors gracefully.
+
 ## SWOT Analysis
 
 ### Strengths
@@ -153,7 +159,7 @@ Cross-Recommendations: Add algorithms to suggest creators across platforms based
 
 Alpha User Community Engagement: Create an early user community (e.g., Discord) to gather insights, encourage contributions, and strengthen user engagement.
 
-Improve the tech stack: Recording time and place of the connections.
+Improve the tech stack: Recording time and place of the connections. Process data asynchronously, such as Queues when processing YouTube channels.
 
 Future integrations: Use Google's Custom Search API to search for links on the web. Add social media platforms' direct APIs. Use Google's Knowledge Graph API to pull public data about a creator. Extract Open Graph (OG) tags or other metadata from websites.
 

@@ -399,6 +399,48 @@ async function processSubscribedChannels(c: Context, accessToken: string) {
   }
 }
 
+const CallbackSuccessView = () => html`
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Authorization Successful</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          text-align: center;
+        }
+        .message-container {
+          max-width: 400px;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+        }
+      </style>
+      <script>
+        // Redirect to process subscriptions page after 3 seconds
+        setTimeout(() => {
+          window.location.href = '/process-subscriptions?page=1';
+        }, 3000);
+      </script>
+    </head>
+    <body>
+      <div class="message-container">
+        <h1>Authorization Successful</h1>
+        <p>Thank you! You have successfully authorized the application.</p>
+        <p>We are now processing your subscriptions.</p>
+        <p>You will be redirected shortly...</p>
+      </div>
+    </body>
+  </html>
+`;
+
 app.get('/callback', async (c) => {
   const url = new URL(c.req.url);
   const code = url.searchParams.get('code');
@@ -407,6 +449,7 @@ app.get('/callback', async (c) => {
     return c.json({ error: 'Authorization code missing from URL' });
   }
 
+  // Exchange the authorization code for an access token
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -420,14 +463,20 @@ app.get('/callback', async (c) => {
   });
 
   const tokenData = await tokenResponse.json();
-
   if (!tokenData.access_token) {
     return c.json({ error: 'Failed to obtain access token' });
   }
 
-  const response = await processSubscribedChannels(c, tokenData.access_token);
+  // Store access token in an HttpOnly cookie
+  setCookie(c, 'access_token', tokenData.access_token, {
+    httpOnly: true,
+    secure: true, // Ensure this is only sent over HTTPS
+    maxAge: tokenData.expires_in, // Set cookie expiration to match token expiration
+    path: '/',
+  });
 
-  return c.json(response);
+  // Render success view with redirect
+  return c.html(<CallbackSuccessView />);
 });
 
 function extractUrls(description: string): string[] {

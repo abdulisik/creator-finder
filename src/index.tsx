@@ -240,10 +240,7 @@ const HomeView = () => html`
             });
 
           function displayResults(creators) {
-            console.log('Creators data received:', creators); // Log the creators data
-
             if (!Array.isArray(creators) || creators.length === 0) {
-              console.warn('No creators to display.'); // Log a warning if no creators
               resultsContainer.innerHTML = '<p>No results found.</p>';
               return;
             }
@@ -365,10 +362,112 @@ const HomeView = () => html`
 // Route to Serve Home View
 app.get('/', (c) => c.html(<HomeView />));
 
-async function processSubscribedChannels(c: Context, accessToken: string) {
+const ErrorView = ({ message }) => html`
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Error Processing Subscriptions</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          text-align: center;
+        }
+        .error-container {
+          max-width: 400px;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="error-container">
+        <h1>Processing Error</h1>
+        <p>${message}</p>
+        <p>
+          Please give us some time, then refresh this page to keep retrying from
+          where we left. If this keeps happening after a day, reach out and
+          include the page URL.
+        </p>
+        <a href="/" style="text-decoration: none; color: #721c24;"
+          >Back to Home</a
+        >
+      </div>
+    </body>
+  </html>
+`;
+
+const SubscriptionProcessingView = ({ titles, nextPageToken }) => html`
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Processing Subscriptions</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          text-align: center;
+        }
+        .message-container {
+          max-width: 400px;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+        }
+      </style>
+      <script>
+        // Redirect to the next page using the provided nextPageToken
+        setTimeout(() => {
+          window.location.href =
+            '/process-subscriptions?pageToken=${nextPageToken}';
+        }, 2000);
+      </script>
+    </head>
+    <body>
+      <div class="message-container">
+        <h1>Processing Subscriptions</h1>
+        <p>
+          Processing the next batch, this could take up to a minute. You;kk be
+          redirected automatically.
+        </p>
+        <p>(Another) ${titles.length} channels have just been processed:</p>
+        <ul>
+          ${titles.map((title) => html`<li>${title}</li>`)}
+        </ul>
+      </div>
+    </body>
+  </html>
+`;
+
+app.get('/process-subscriptions', async (c) => {
+  const pageToken = c.req.query('pageToken') ?? '';
+  const accessToken = getCookie(c, 'access_token'); // Retrieve access token from cookie
+
+  if (!accessToken) {
+    return c.json({ error: 'Unauthorized. Access token missing.' }, 401);
+  }
+
   try {
+    // Fetch subscriptions for the current page using the YouTube API
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=40`, //TODO: handle nextPageToken and increase to 50
+      `https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=50${
+        pageToken ? `&pageToken=${pageToken}` : ''
+      }`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -380,7 +479,12 @@ async function processSubscribedChannels(c: Context, accessToken: string) {
     const data = await response.json();
 
     if (!data.items) {
-      return { error: 'No subscriptions found or insufficient permissions' };
+      return c.json(
+        {
+          error: `No subscriptions found or insufficient permissions. ${data}`,
+        },
+        403
+      );
     }
 
     // Collect channel IDs and titles
@@ -389,15 +493,35 @@ async function processSubscribedChannels(c: Context, accessToken: string) {
     );
     const processedTitles = data.items.map((item) => item.snippet.title);
 
-    // Batch add creators
-    await addCreators(c, channelIds);
+    // Batch add creators to the database
+    const addResult = await addCreators(c, channelIds);
 
-    return { success: true, processedTitles };
+    // If adding creators failed due to quota or another issue, display error
+    if (!addResult.success) {
+      return c.html(<ErrorView message={addResult.error} />);
+    }
+
+    // Handle next page
+    const nextPageToken = data.nextPageToken;
+    if (nextPageToken) {
+      // Render the processing view with feedback and redirect to the next page
+      return c.html(
+        <SubscriptionProcessingView
+          titles={processedTitles}
+          nextPageToken={nextPageToken}
+        />
+      );
+    } else {
+      // All pages processed, redirect to My Subscriptions page
+      return c.redirect('/subscriptions');
+    }
   } catch (error) {
     console.error('Error processing subscriptions:', error);
-    return { error: 'Failed to process subscriptions' };
+    return c.html(
+      <ErrorView message='Failed to process subscriptions due to an unexpected error.' />
+    );
   }
-}
+});
 
 const CallbackSuccessView = () => html`
   <html lang="en">
@@ -426,7 +550,7 @@ const CallbackSuccessView = () => html`
       <script>
         // Redirect to process subscriptions page after 3 seconds
         setTimeout(() => {
-          window.location.href = '/process-subscriptions?page=1';
+          window.location.href = '/process-subscriptions';
         }, 3000);
       </script>
     </head>
@@ -499,6 +623,10 @@ async function handleYouTubeCreator(
     const channelResponse = await fetch(apiUrl);
     const channelData = await channelResponse.json();
 
+    if (channelData.error) {
+      console.error('YouTube API error:', channelData);
+      return { error: channelData.error.message };
+    }
     if (!channelData.items?.length) {
       console.error('Channel not found:', channelData);
       return { error: 'Channel not found' };
@@ -515,7 +643,7 @@ async function handleYouTubeCreator(
     const videoData = await videoResponse.json();
 
     if (!videoData.items || !videoData.items.length) {
-      return { error: `No videos found for ${channelName}` };
+      return { success: true, channelName, urls: [] };
     }
 
     // Extract URLs from the video descriptions
@@ -665,9 +793,10 @@ async function addCreators(c: Context, handles: string[]) {
       const result = await handleYouTubeCreator(link, c.env.YOUTUBE_API_KEY);
       if (!result.success) {
         console.error('Error in handleYouTubeCreator:', result.error);
-        errorMessage += result.error || 'Unknown error';
-        continue; //TODO: Handle 403 quota exceeded
+        errorMessage += (result.error ?? 'Unknown error') + ' \n';
+        continue;
       }
+      if (result.urls.length === 0) continue;
 
       // Step 4: Insert New Creator if Link is New
       const { channelName, urls } = result;
@@ -848,7 +977,12 @@ app.get('/subscriptions', async (c) => {
     return acc;
   }, {});
 
-  return c.html(<ListView creators={Object.values(creators)} />);
+  return c.html(
+    <ListView
+      creators={Object.values(creators)}
+      message='Subscribed Creators'
+    />
+  );
 });
 
 export default app;

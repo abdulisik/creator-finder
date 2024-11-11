@@ -442,7 +442,7 @@ const SubscriptionProcessingView = ({ titles, nextPageToken }) => html`
       <div class="message-container">
         <h1>Processing Subscriptions</h1>
         <p>
-          Processing the next batch, this could take up to a minute. You;kk be
+          Processing the next batch, this could take up to a minute. You'll be
           redirected automatically.
         </p>
         <p>(Another) ${titles.length} channels have just been processed:</p>
@@ -662,7 +662,7 @@ async function handleYouTubeCreator(
     return { success: true, channelName, urls };
   } catch (error) {
     console.error('Error in handleYouTubeCreator:', error);
-    return { error: 'Failed to process YouTube creator' };
+    return { error: error };
   }
 }
 

@@ -435,7 +435,7 @@ const SubscriptionProcessingView = ({ titles, nextPageToken }) => html`
         setTimeout(() => {
           window.location.href =
             '/process-subscriptions?pageToken=${nextPageToken}';
-        }, 2000);
+        }, 50);
       </script>
     </head>
     <body>

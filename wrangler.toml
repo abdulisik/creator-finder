@@ -3,25 +3,12 @@ main = "src/index.tsx"
 compatibility_date = "2024-10-20"
 compatibility_flags = [ "nodejs_compat" ]
 workers_dev = false
-
-# [vars]
-# MY_VAR = "my-variable"
-
-# [[kv_namespaces]]
-# binding = "MY_KV_NAMESPACE"
-# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
-# [[r2_buckets]]
-# binding = "MY_BUCKET"
-# bucket_name = "my-bucket"
+upload_source_maps = true
 
 [[d1_databases]]
 binding = "DB"
 database_name = "creator_finder_db"
 database_id = "b63bac41-54e0-4c8e-8701-38c3b3b208fb"
-
-# [ai]
-# binding = "AI"
 
 [observability]
 enabled = true

@@ -48,66 +48,66 @@ User Story: As a user, I want the system to cross-reference multiple platforms f
 
 Goal: Expand the database to include more creators and cross-reference manually collected links between YouTube and Patreon. Improve the database schema for additional platforms.
 
-### **Milestone 3: API Integration (Friends-Testing Stage)**
+### Milestone 3: API Integration (Friends-Testing Stage)
 
-**User Stories**:
+User Stories:
 
 1. As a user, I want to automatically import the creators I follow on YouTube.
 2. As a user, I want to see which of my followed YouTube creators have Patreon pages linked.
 
-**Goal**: Integrate the YouTube API to automatically import creators, enabling initial feedback testing with friends.
+Goal: Integrate the YouTube API to automatically import creators, enabling initial feedback testing with friends.
 
-#### **Milestone 3.1: Initial YouTube API Integration for Video Descriptions**
+#### Milestone 3.1: Initial YouTube API Integration for Video Descriptions
 
 Connect to the YouTube API to gather video descriptions from user-specified channels and extract any URLs.
 
-#### **Milestone 3.2: Automated Link Insertion**
+#### Milestone 3.2: Automated Link Insertion
 
 Implement a method to automatically handle link insertion, classifying URLs by domain and platform.
 
-#### **Milestone 3.3: OAuth Integration with YouTube for Subscribed Channels**
+#### Milestone 3.3: OAuth Integration with YouTube for Subscribed Channels
 
 Integrate YouTube OAuth to retrieve a user’s subscriptions, extracting details to auto-populate creator profiles.
 
-### **Milestone 4: Basic User Management (Cookie-Based Subscriptions)**
+### Milestone 4: Basic User Management (Cookie-Based Subscriptions)
 
 User Story: As a user, I want to save the list of creators I follow and search for links from those creators.
 
 Objective: Introduce lightweight user management by using cookies to store each user's subscribed creators. This approach allows users to maintain a personalized experience without requiring formal account creation.
 
-### **Milestone 5: Basic UI Improvements**
+### Milestone 5: Basic UI Improvements
 
 User Story: What is this app anyway?
 
-#### **5.1 Navigation Bar Enhancement**
+#### 5.1 Navigation Bar Enhancement
 
 Improve navigation across pages by adding a simple nav bar.
 
-#### **5.2 Home Page Descriptions and Text**
+#### 5.2 Home Page Descriptions and Text
 
 Provide a brief explanation of key features to guide users.
 
-#### **5.3 Search and Add Creator Bars Separation**
+#### 5.3 Search and Add Creator Bars Separation
 
 Separate the search bar and "Add Creator" input to avoid conflicts. Adjust logic so the "Add Creator" function can handle custom handles, channel IDs, or full URLs, depending on the structure provided by the user.
 
-#### **5.4 Search Filtering Toggle (Checkbox)**
+#### 5.4 Search Filtering Toggle (Checkbox)
 
 Allow users to toggle between viewing only subscribed creators or all creators in search results.
 
-#### **5.5 Display Improvements for Search Results**
+#### 5.5 Display Improvements for Search Results
 
 Make search results more organized by grouping multiple links under the same creator in search results, making it easier to see all profiles from a single creator at once.
 
-#### **5.6 Display Imported Subscriptions**
+#### 5.6 Display Imported Subscriptions
 
 Provide users with a summary of imported channels.
 
-#### **5.7 Style and Polish UI Elements**
+#### 5.7 Style and Polish UI Elements
 
 Polish the UI elements to enhance user experience.
 
-### **Milestone 6: Process All Subscribed YouTube Channels**
+### Milestone 6: Process All Subscribed YouTube Channels
 
 User Story: As a user, I want the app to automatically process and display all my subscribed YouTube channels, so I can easily see which of my subscriptions have connected profiles across platforms.
 
@@ -157,17 +157,17 @@ More Platforms: Expand to other creator-driven platforms like Instagram, TikTok,
 
 Cross-Recommendations: Add algorithms to suggest creators across platforms based on user preferences and personas.
 
-Alpha User Community Engagement: Create an early user community (e.g., Discord) to gather insights, encourage contributions, and strengthen user engagement.
+Alpha User Community Engagement: Create an early user community (e.g., Discord) to gather insights, encourage contributions, and strengthen user engagement. Add a feedback button or form, allowing users to report issues, suggest features, or share their experiences. Add a feature log or updates list on the homepage, so testers can see changes as they happen.
 
-Improve the tech stack: Recording time and place of the connections. Process data asynchronously, such as Queues when processing YouTube channels.
+Improve the tech stack: Recording time and place of the connections. Process data asynchronously, such as Queues when processing YouTube channels. Add pagination to search results. Add indexes to database tables.
 
 Future integrations: Use Google's Custom Search API to search for links on the web. Add social media platforms' direct APIs. Use Google's Knowledge Graph API to pull public data about a creator. Extract Open Graph (OG) tags or other metadata from websites.
 
-Analytics and management: Add a table to hold a list of domains, their quantity within the db and their associated tables; this will allow us to pick the next platform to add. It'll also allow us to have an admin view to analyze and process the list of domains. Store user information only locally. We can outsource matching a domain to a platform: <https://www.netify.ai/products/netify-data-feeds/pricing>
+Data Dashboard, Link Insights, and Improved Management: The dashboard will display basic analytics, such as total creators followed, the number of links added, and platform distribution, providing users with insights into where their favorite creators are most active. Improved link extraction and domain analysis will automate grouping links by platform, reducing duplicates and ensuring accurate platform coverage. An admin view will support effective management of popular links and domains, making it easier to decide which platforms to prioritize next. Netify’s data feeds is considered for domain-to-platform mapping.
 
-Market research: Find competitors, and determine our unique value proposition. We answer the questions should I open an account on this other platform, can I close my account on this platform safely, etc.
+Unique Value Proposition: Our app provides a unique solution to the problem of discovering creators across multiple platforms, while addressing common creator questions, such as "Should I open an account on this other platform?" and "Can I safely close my account on a specific platform?" Through in-depth link insights and activity tracking, users will gain a clear view of where their followers are most active and which platforms provide the most engagement. This empowers creators and followers alike to make informed decisions about expanding or consolidating their social presence, streamlining platform choices based on data rather than guesswork.
 
-## Future Monetization Ideas
+## Monetization Ideas
 
 ### Subscription Model
 
@@ -189,29 +189,38 @@ Provide creators with analytics on where their followers are finding them and wh
 
 Introduce non-intrusive ads to free-tier users. Ads could be targeted towards users looking to support more creators or discover similar content.
 
-### Marketplace for Cross-Promotion
-
-Build a marketplace where creators can collaborate and cross-promote each other. Access to this marketplace could be subscription-based or include transaction fees.
-
 ## Tools and Tech Stack
 
-Frontend: React or Vue.js for ease of rapid MVP development.
+Frontend: Custom HTML and JavaScript, with potential future transition to a framework like Remix, React or Vue.js for enhanced interactivity and ease of development.
 
-Backend: Hono (a fast, lightweight web framework suitable for Cloudflare) or alternatives like Cloudflare Pages and Workers for full stack on Cloudflare.
+Backend: Hono, a fast and lightweight web framework optimized for Cloudflare, leveraging Cloudflare Workers to manage server-side functionality seamlessly.
 
-Database: Cloudflare D1 for distributed data storage.
+Database: Cloudflare D1, a distributed SQL database, to store and manage creator data and link information efficiently.
 
-Web Scraping (for early data collection): Python with BeautifulSoup or Scrapy to collect Patreon links from YouTube descriptions.
+Data Collection: YouTube API integration for automated link extraction from YouTube channels, with future potential for additional API integrations.
 
-Hosting: Cloudflare Pages (for frontend) and Workers (for backend).
+Hosting: Full stack hosting on Cloudflare for a streamlined, scalable deployment.
 
 ## Development
+
+To run locally:
 
 ```sh
 npm install
 npm run dev
 ```
 
+To deploy, simply push to the main branch.
+
+To tail the remote logs:
+
 ```sh
-npm run deploy
+npx wrangler tail creator-finder
+```
+
+To reset or initialize the database:
+
+```sh
+npx wrangler d1 execute creator_finder_db --local --file='./db.sql' # local
+npx wrangler d1 execute creator_finder_db --remote --file='./db.sql' # remote
 ```

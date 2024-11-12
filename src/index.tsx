@@ -14,7 +14,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 const NavBar = () => html`
   <nav>
-    <a href="/">Home</a> | <a href="/all">View All Creators</a> |
+    <a href="/">Home</a> | <a href="/all">All Creators</a> |
     <a href="/subscriptions">My Subscriptions</a>
   </nav>
   <style>
@@ -364,32 +364,7 @@ app.get('/', (c) => c.html(<HomeView />));
 
 const ErrorView = ({ message }) => html`
   <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Error Processing Subscriptions</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          height: 100vh;
-          margin: 0;
-          text-align: center;
-        }
-        .error-container {
-          max-width: 400px;
-          padding: 20px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
-          background-color: #f8d7da;
-          color: #721c24;
-        }
-      </style>
-    </head>
-    <body>
+    <body style="text-align: center;">
       <div class="error-container">
         <h1>Processing Error</h1>
         <p>${message}</p>
@@ -642,7 +617,7 @@ async function handleYouTubeCreator(
     );
     const videoData = await videoResponse.json();
 
-    if (!videoData.items || !videoData.items.length) {
+    if (!videoData.items?.length) {
       return { success: true, channelName, urls: [] };
     }
 
@@ -677,29 +652,25 @@ async function processAndInsertLink(
       .replace('www.', '')
       .replace('.com', '');
 
-    //TODO: domains already expects unique text, so just use upsert
     // Update or insert into domains table
-    const domainCheck = await db
-      .prepare(`SELECT id FROM domains WHERE domain = ?`)
+    const updateResult = await db
+      .prepare(`UPDATE domains SET quantity = quantity + 1 WHERE domain = ?`)
       .bind(domain)
-      .first();
-
-    if (!domainCheck) {
-      db.prepare(
-        `INSERT INTO domains (domain, platform, quantity) VALUES (?, ?, 1)`
-      )
+      .run();
+    if (!updateResult.success) {
+      await db
+        .prepare(
+          `INSERT INTO domains (domain, platform, quantity) VALUES (?, ?, 1)`
+        )
         .bind(domain, platform)
-        .run();
-    } else {
-      db.prepare(`UPDATE domains SET quantity = quantity + 1 WHERE domain = ?`)
-        .bind(domain)
         .run();
     }
 
     // Insert link into links table
-    db.prepare(
-      `INSERT INTO links (creator_id, platform, link, discovered_on) VALUES (?, ?, ?, ?)`
-    )
+    await db
+      .prepare(
+        `INSERT INTO links (creator_id, platform, link, discovered_on) VALUES (?, ?, ?, ?)`
+      )
       .bind(creatorId, platform, url, platform)
       .run();
 
@@ -713,7 +684,10 @@ async function processAndInsertLink(
 async function addCreatorToCookie(c: Context, creatorIds: number[]) {
   // Get the current subscribed creator IDs from the cookie
   const subscribedIds = new Set(
-    getCookie(c, 'subscribed_creators')?.split(',').map(Number) || []
+    (getCookie(c, 'subscribed_creators') ?? '')
+      .split(',')
+      .map(Number)
+      .filter(Boolean)
   );
 
   // Add each new creator ID to the set
@@ -744,23 +718,23 @@ app.post('/add', async (c) => {
     const result = await addCreators(c, [handle]);
 
     if (!result.success) {
-      return c.json({ error: result.error || 'Unknown error' }, 500);
+      return c.json({ error: result.error ?? 'Unknown error' }, 500);
     }
 
     return c.json({
       message: 'Creator and links processed successfully',
-      creatorId: result.creatorId,
+      creatorId: result.creatorIds ?? [0],
     });
   } catch (error) {
     console.error('Error in /add endpoint:', error);
-    return c.json({ error: error.message || 'Unknown error occurred' }, 500);
+    return c.json({ error: error?.message ?? 'Unknown error occurred' }, 500);
   }
 });
 
 async function addCreators(c: Context, handles: string[]) {
   const db = c.env.DB;
   const addedCreatorIds: number[] = [];
-  let errorMessage = '';
+  let errorMessages: string[] = [];
   for (const handle of handles) {
     try {
       // Step 1: Sanitize and Convert Query to YouTube Link if Necessary
@@ -778,13 +752,13 @@ async function addCreators(c: Context, handles: string[]) {
       }
 
       // Step 2: Check if Link Already Exists in Database
-      const existingLink = await db
+      const existingCreatorId = await db
         .prepare(`SELECT creator_id FROM links WHERE link = ?`)
         .bind(link)
-        .first();
+        .first('creator_id');
 
-      if (existingLink) {
-        addedCreatorIds.push(existingLink.creator_id);
+      if (existingCreatorId) {
+        addedCreatorIds.push(existingCreatorId);
         continue;
       }
 
@@ -792,7 +766,7 @@ async function addCreators(c: Context, handles: string[]) {
       const result = await handleYouTubeCreator(link, c.env.YOUTUBE_API_KEY);
       if (!result.success) {
         console.error('Error in handleYouTubeCreator:', result.error);
-        errorMessage += (result.error ?? 'Unknown error') + ' \n';
+        errorMessages.push(result.error ?? 'Unknown error');
         continue;
       }
       if (result.urls.length === 0) continue;
@@ -811,34 +785,35 @@ async function addCreators(c: Context, handles: string[]) {
       addedCreatorIds.push(creatorId);
     } catch (error) {
       console.error('Error in addCreator:', error);
-      errorMessage += error.message || 'Unknown error';
+      errorMessages.push(error.message ?? 'Unknown error');
     }
   }
   // Update the cookie with all added creator IDs
   await addCreatorToCookie(c, addedCreatorIds);
-  if (errorMessage) {
-    return { success: false, error: errorMessage };
-  }
-  return { success: true, creatorIds: addedCreatorIds };
+  return {
+    success: errorMessages.length === 0,
+    error: errorMessages.join('\n'),
+    creatorIds: addedCreatorIds,
+  };
 }
 
 // Utility function to insert or get existing creator
 async function getOrCreateCreator(db: D1Database, name: string) {
-  const existingCreator = await db
+  const existingCreatorId = await db
     .prepare(`SELECT id FROM creators WHERE name = ?`)
     .bind(name)
-    .first();
+    .first('id');
 
-  if (existingCreator) return existingCreator.id;
+  if (existingCreatorId) return existingCreatorId;
 
-  const newCreator = await db
+  const newCreatorId = await db
     .prepare(
       `INSERT INTO creators (name, discovered_on) VALUES (?, 'YouTube') RETURNING id`
     )
     .bind(name)
-    .first();
+    .first('id');
 
-  return newCreator?.id;
+  return newCreatorId;
 }
 
 app.get('/search/:query', async (c) => {
@@ -871,7 +846,7 @@ app.get('/search/:query', async (c) => {
       .bind(`%${query}%`, `%${query}%`, `%${query}%`)
       .all();
 
-    if (!results.results || results.results.length === 0) {
+    if (!results.results?.length) {
       return c.json({ message: 'No creators found.' }, 404);
     }
 
@@ -944,7 +919,7 @@ app.get('/all', async (c) => {
 
 app.get('/subscriptions', async (c) => {
   // Retrieve subscribed creator IDs from the cookie
-  const subscribedIds = (getCookie(c, 'subscribed_creators') || '')
+  const subscribedIds = (getCookie(c, 'subscribed_creators') ?? '')
     .split(',')
     .map(Number)
     .filter(Boolean); // Convert to numbers and filter out any invalid values

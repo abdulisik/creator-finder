@@ -113,6 +113,12 @@ User Story: As a user, I want the app to automatically process and display all m
 
 Objective: Process all YouTube subscriptions in batches, handling one page of results at a time. Implement feedback and redirection for a smooth user experience, handling API limits and errors gracefully.
 
+### Milestone 7: Launch
+
+Tasks done:
+
+- Security enhancements.
+
 ## SWOT Analysis
 
 ### Strengths

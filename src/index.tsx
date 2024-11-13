@@ -437,6 +437,10 @@ app.get('/process-subscriptions', async (c) => {
     return c.json({ error: 'Unauthorized. Access token missing.' }, 401);
   }
 
+  if (typeof pageToken !== 'string' || pageToken.length > 255) {
+    return c.json({ error: 'Invalid page token' }, 400);
+  }
+
   try {
     // Fetch subscriptions for the current page using the YouTube API
     const response = await fetch(
@@ -710,8 +714,15 @@ app.post('/add', async (c) => {
     return c.json({ message: 'Invalid JSON format', error: e }, 400);
   }
 
-  if (typeof handle !== 'string' || handle.trim() === '') {
-    return c.json({ error: 'Invalid request' }, 400);
+  if (
+    typeof handle !== 'string' ||
+    handle.trim() === '' ||
+    handle.length > 255
+  ) {
+    return c.json({ error: 'Invalid handle' }, 400);
+  }
+  if (!/^[a-zA-Z0-9@_.-]+$/.test(handle) && !/^https?:\/\//.test(handle)) {
+    return c.json({ error: 'Handle must be a valid string or URL' }, 400);
   }
 
   try {
@@ -734,7 +745,7 @@ app.post('/add', async (c) => {
 async function addCreators(c: Context, handles: string[]) {
   const db = c.env.DB;
   const addedCreatorIds: number[] = [];
-  let errorMessages: string[] = [];
+  const errorMessages: string[] = [];
   for (const handle of handles) {
     try {
       // Step 1: Sanitize and Convert Query to YouTube Link if Necessary
@@ -819,12 +830,15 @@ async function getOrCreateCreator(db: D1Database, name: string) {
 app.get('/search/:query', async (c) => {
   try {
     const query = c.req.param('query') || '';
+    if (typeof query !== 'string' || query.length > 255) {
+      return c.json({ error: 'Invalid search query' }, 400);
+    }
     const filter = c.req.query('filter');
-    const subscribedCookie = getCookie(c, 'subscribed_creators') ?? '';
-    const subscribedIds = subscribedCookie
+    const subscribedIds = (getCookie(c, 'subscribed_creators') ?? '')
       .split(',')
       .filter(Boolean)
-      .map(Number);
+      .map(Number)
+      .filter((id) => Number.isInteger(id) && id >= 0);
 
     // Base SQL query
     let sql = `SELECT creators.name,
@@ -921,8 +935,9 @@ app.get('/subscriptions', async (c) => {
   // Retrieve subscribed creator IDs from the cookie
   const subscribedIds = (getCookie(c, 'subscribed_creators') ?? '')
     .split(',')
+    .filter(Boolean)
     .map(Number)
-    .filter(Boolean); // Convert to numbers and filter out any invalid values
+    .filter((id) => Number.isInteger(id) && id >= 0);
 
   // If there are no subscribed IDs, display a message or an empty list
   if (subscribedIds.length === 0) {

@@ -1,0 +1,40 @@
+Terms of Use
+
+    Service Overview:
+    This website is a free tool to help users discover and organize public data from creators across different platforms. All data stored on our servers is publicly available and retrieved from publicly accessible sources (e.g., YouTube video descriptions).
+
+    Authorization:
+    Authorization with external platforms (e.g., YouTube) is purely optional and used solely to import publicly available data. Any authorization tokens are stored locally on your device and are not retained on our servers.
+
+    Non-Commercial Usage:
+    This website is offered free for personal and non-commercial use. Commercial usage or redistribution of the data without prior permission is prohibited.
+
+    Rate Limits:
+    Usage is subject to rate limits to ensure fair access. Excessive requests may result in temporary restrictions.
+
+    Feedback and Donations:
+    Feedback, suggestions, sponsorships, and donations are welcome to support further development of this free tool.
+    https://github.com/sponsors/abdulisik
+
+
+Privacy Policy
+
+    Data Collected:
+        Public Data: We only store publicly available data, such as links found in video descriptions or creator profile pages.
+        Local Storage: Subscriptions and preferences are stored locally in your browser cookies or local storage.
+        Analytics: We use Cloudflare's privacy-preserving analytics to monitor basic usage metrics. No personally identifiable information is collected.
+
+    Logs:
+        All server logs are automatically deleted after 7 days, as per Cloudflare Workers Logs limitations. These logs are only used for troubleshooting purposes.
+
+    Third-Party APIs:
+        We use external APIs (e.g., YouTube) for data importing and authorization. Each API follows its own privacy policies, which are linked during the authorization process.
+
+    No Data Sharing or Selling:
+        We do not share, sell, or resell user data. All data stored on our servers is publicly available, and user-specific information is only held locally on your device.
+
+    Data Deletion:
+        For GDPR, CCPA, or similar compliance needs, simply clear your browser cookies and local storage to remove all data related to this website.
+
+    Contact Us:
+        For inquiries regarding publicly available data usage or other concerns, please contact us at inquiries@abdulisik.com.

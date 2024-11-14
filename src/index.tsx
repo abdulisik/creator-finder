@@ -49,8 +49,8 @@ app.use(
 
 const NavBar = () => html`
   <nav>
-    <a href="/">Home</a> | <a href="/all">All Creators</a> |
-    <a href="/subscriptions">My Subscriptions</a>
+    <a href="/">Home</a> | <a href="/subscriptions">Subscriptions</a> |
+    <a href="/terms.txt">Terms</a> | <a href="/faq.txt">FAQ</a>
   </nav>
   <style>
     nav {
@@ -225,7 +225,7 @@ const HomeView = () => html`
               );
               if (response.status === 429) {
                 resultsContainer.innerHTML =
-                  '<p style="color: red;">You are making too many requests. Please try again later.</p>';
+                  '<p style="color: red;">You are making too many requests. Please try again later or authorize.</p>';
               } else if (response.ok) {
                 const creators = await response.json();
                 displayResults(creators);

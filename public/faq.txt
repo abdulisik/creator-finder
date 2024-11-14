@@ -1,0 +1,36 @@
+FAQ
+1. What does this website do?
+
+This tool helps you organize and discover public data about creators, such as links found in their video descriptions or profiles, across different platforms.
+
+2. What data is stored on the server?
+
+We only store public data (e.g., video descriptions and profile links). Subscription preferences are stored locally in your browser.
+
+3. How is my data protected?
+
+We don’t store personal data on our servers. Your subscription data and API authorization tokens are stored locally in your browser.
+
+4. What happens when I authorize with YouTube?
+
+Authorization allows us to fetch your subscriptions and import public data about those creators. This process is optional and entirely local; no personal tokens or subscription data are sent to our servers.
+
+5. Can I use this data commercially?
+
+This website is free for personal use. If you want to use the data for commercial purposes, please contact us for permission.
+
+6. How can I delete my data?
+
+Clear your browser cookies and local storage to remove all data associated with this website.
+
+7. Are there rate limits?
+
+Yes, to ensure fair usage, rate limits are enforced. You will receive an error if you exceed the limits. Simply wait before making additional requests. Authorization will increase your rate limit.
+
+8. Can I donate or sponsor this project?
+
+Yes! We appreciate feedback, donations, and sponsorships to help maintain and improve this free tool. https://github.com/sponsors/abdulisik
+
+9. How do you handle API usage limits?
+
+We use rate-limited external APIs (e.g., YouTube). If limits are exceeded, processing will pause, and you’ll be asked to retry later.

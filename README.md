@@ -119,6 +119,7 @@ Tasks done:
 
 - Security enhancements.
 - Rate Limiting
+- Add terms and privacy
 
 ## SWOT Analysis
 

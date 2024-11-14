@@ -1,4 +1,7 @@
 import { Context, Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { csrf } from 'hono/csrf';
+import { secureHeaders } from 'hono/secure-headers';
 import { html } from 'hono/html';
 import fetch from 'node-fetch';
 import { setCookie, getCookie } from 'hono/cookie';
@@ -11,6 +14,24 @@ type Bindings = {
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+app.use(
+  cors({
+    origin: ['https://creator-finder.abdulisik.com', 'http://localhost:8787'],
+    allowMethods: ['GET', 'POST'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 600, // Cache the preflight response for 10 minutes
+    credentials: true, // Allow cookies to be sent
+  })
+);
+
+app.use(
+  csrf({
+    origin: ['https://creator-finder.abdulisik.com', 'http://localhost:8787'],
+  })
+);
+
+app.use(secureHeaders());
 
 const NavBar = () => html`
   <nav>
@@ -575,6 +596,7 @@ app.get('/callback', async (c) => {
     httpOnly: true,
     secure: true, // Ensure this is only sent over HTTPS
     maxAge: tokenData.expires_in, // Set cookie expiration to match token expiration
+    sameSite: 'Strict',
     path: '/',
   });
 

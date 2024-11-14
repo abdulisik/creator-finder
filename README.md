@@ -118,6 +118,7 @@ Objective: Process all YouTube subscriptions in batches, handling one page of re
 Tasks done:
 
 - Security enhancements.
+- Rate Limiting
 
 ## SWOT Analysis
 

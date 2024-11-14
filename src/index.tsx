@@ -5,15 +5,22 @@ import { secureHeaders } from 'hono/secure-headers';
 import { html } from 'hono/html';
 import fetch from 'node-fetch';
 import { setCookie, getCookie } from 'hono/cookie';
+import { cloudflareRateLimiter } from '@hono-rate-limiter/cloudflare';
 
-type Bindings = {
-  DB: D1Database;
-  YOUTUBE_API_KEY: string;
-  YOUTUBE_CLIENT_ID: string;
-  YOUTUBE_CLIENT_SECRET: string;
+type AppType = {
+  Variables: {
+    rateLimit: boolean;
+  };
+  Bindings: {
+    DB: D1Database;
+    YOUTUBE_API_KEY: string;
+    YOUTUBE_CLIENT_ID: string;
+    YOUTUBE_CLIENT_SECRET: string;
+    LIMIT: RateLimit;
+  };
 };
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<AppType>();
 
 app.use(
   cors({
@@ -32,6 +39,13 @@ app.use(
 );
 
 app.use(secureHeaders());
+
+app.use(
+  cloudflareRateLimiter<AppType>({
+    rateLimitBinding: (c: Context) => c.env.LIMIT,
+    keyGenerator: (c: Context) => getCookie(c, 'access_token') ?? '',
+  })
+);
 
 const NavBar = () => html`
   <nav>
@@ -209,8 +223,19 @@ const HomeView = () => html`
               const response = await fetch(
                 '/search/' + encodeURIComponent(query) + '?filter=' + filter
               );
-              const creators = await response.json();
-              displayResults(creators);
+              if (response.status === 429) {
+                resultsContainer.innerHTML =
+                  '<p style="color: red;">You are making too many requests. Please try again later.</p>';
+              } else if (response.ok) {
+                const creators = await response.json();
+                displayResults(creators);
+              } else {
+                const error = await response.json();
+                resultsContainer.innerHTML =
+                  '<p style="color: red;">Error: ' +
+                  (error.message || 'Unknown error') +
+                  '</p>';
+              }
             } else {
               resultsContainer.innerHTML = ''; // Clear results if query is too short
             }

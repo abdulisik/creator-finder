@@ -202,10 +202,6 @@ const HomeView = () => html`
           margin-right: 5px;
           transform: scale(1.2); /* Make checkbox slightly larger */
         }
-
-        label[for='filterCheckbox'] {
-          font-size: 14px;
-        }
       </style>
       <script src="/home.js" defer></script>
     </head>
@@ -251,8 +247,6 @@ const HomeView = () => html`
           id="searchInput"
           placeholder="Search for creators..."
         />
-        <input type="checkbox" id="filterCheckbox" />
-        <label for="filterCheckbox">Show only my subscribed creators</label>
       </div>
       <!-- Results and Search Section -->
       <div id="resultsContainer"></div>
@@ -724,7 +718,6 @@ app.get('/search/:query', async (c) => {
     if (typeof query !== 'string' || query.length > 255) {
       return c.json({ error: 'Invalid search query' }, 400);
     }
-    const filter = c.req.query('filter');
     const subscribedIds = (getCookie(c, 'subscribed_creators') ?? '')
       .split(',')
       .filter(Boolean)
@@ -741,7 +734,7 @@ app.get('/search/:query', async (c) => {
                WHERE (creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?)`;
 
     // If we have subscribed IDs, restrict results to those IDs
-    if (filter === 'subscribed' && subscribedIds.length > 0) {
+    if (subscribedIds.length > 0) {
       sql += ` AND creators.id IN (${subscribedIds.join(',')})`;
     }
 
@@ -791,36 +784,6 @@ const ListView = ({ creators, message = 'All creators' }) => html`
     </body>
   </html>
 `;
-
-app.get('/all', async (c) => {
-  const results = await c.env.DB.prepare(
-    `SELECT creators.name, links.platform, links.handle, links.link
-     FROM links
-     JOIN creators ON links.creator_id = creators.id`
-  ).all();
-
-  if (!results.results || results.results.length === 0) {
-    return c.json({ message: 'No creators found.' }, 404);
-  }
-
-  // Group links by creator's name
-  const creators = results.results.reduce((acc, row) => {
-    if (!acc[row.name]) {
-      acc[row.name] = { name: row.name, links: [] };
-    }
-    acc[row.name].links.push({
-      platform: row.platform,
-      handle: row.handle,
-      link: row.link,
-    });
-    return acc;
-  }, {});
-
-  // Pass grouped creators to the ListView component
-  return c.html(
-    <ListView creators={Object.values(creators)} message='All creators' />
-  );
-});
 
 app.get('/subscriptions', async (c) => {
   // Retrieve subscribed creator IDs from the cookie

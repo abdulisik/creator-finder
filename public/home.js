@@ -3,17 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Search functionality
   const searchInput = document.getElementById('searchInput');
   const resultsContainer = document.getElementById('resultsContainer');
-  const filterCheckbox = document.getElementById('filterCheckbox');
 
   async function performSearch() {
     const query = searchInput.value;
-    const filter = filterCheckbox.checked ? 'subscribed' : 'all';
 
     if (query.length > 2) {
       try {
-        const response = await fetch(
-          '/search/' + encodeURIComponent(query) + '?filter=' + filter
-        );
+        const response = await fetch('/search/' + encodeURIComponent(query));
         if (response.status === 429) {
           resultsContainer.innerHTML =
             '<p style="color: red;">You are making too many requests. Please try again later or authorize.</p>';
@@ -38,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   searchInput.addEventListener('input', performSearch);
-  filterCheckbox.addEventListener('change', performSearch);
 
   // Add creator functionality
   const addCreatorForm = document.getElementById('addCreatorForm');
@@ -81,7 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function displayResults(creators) {
     if (!Array.isArray(creators) || creators.length === 0) {
-      resultsContainer.innerHTML = '<p>No results found.</p>';
+      resultsContainer.innerHTML =
+        '<p>No results found among subscribed or known creators.</p>';
       return;
     }
 

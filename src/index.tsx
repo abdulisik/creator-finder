@@ -10,6 +10,8 @@ import { cloudflareRateLimiter } from '@hono-rate-limiter/cloudflare';
 type AppType = {
   Variables: {
     rateLimit: boolean;
+    ORIGIN: string[];
+    PAGE_SIZE: number;
   };
   Bindings: {
     DB: D1Database;
@@ -22,23 +24,20 @@ type AppType = {
 
 const app = new Hono<AppType>();
 
-app.use(
+app.use(async (c: Context, next) => {
   cors({
-    origin: ['https://creator-finder.abdulisik.com', 'http://localhost:8787'],
+    origin: c.env.ORIGIN,
     allowMethods: ['GET', 'POST'],
     allowHeaders: ['Content-Type', 'Authorization'],
     maxAge: 600, // Cache the preflight response for 10 minutes
     credentials: true, // Allow cookies to be sent
-  })
-);
-
-app.use(
+  });
   csrf({
-    origin: ['https://creator-finder.abdulisik.com', 'http://localhost:8787'],
-  })
-);
-
-app.use(secureHeaders());
+    origin: c.env.ORIGIN,
+  });
+  secureHeaders();
+  return await next();
+});
 
 app.use(
   cloudflareRateLimiter<AppType>({
@@ -729,7 +728,7 @@ app.get('/search/:query', async (c) => {
   try {
     const query = c.req.param('query') || '';
     const page = parseInt(c.req.query('page') || '1', 10);
-    const pageSize = 20;
+    const pageSize = c.env.PAGE_SIZE;
     const offset = (page - 1) * pageSize;
 
     if (typeof query !== 'string' || query.length > 255) {

@@ -6,6 +6,10 @@ workers_dev = false
 upload_source_maps = true
 assets = { directory = "./public/" }
 
+[vars]
+ORIGIN = ['https://creator-finder.abdulisik.com', 'http://localhost:8787']
+PAGE_SIZE = 20
+
 [[d1_databases]]
 binding = "DB"
 database_name = "creator_finder_db"

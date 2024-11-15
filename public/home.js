@@ -4,37 +4,63 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('searchInput');
   const resultsContainer = document.getElementById('resultsContainer');
 
-  async function performSearch() {
+  async function performSearch(currentPage = 1) {
     const query = searchInput.value;
 
     if (query.length > 2) {
       try {
-        const response = await fetch('/search/' + encodeURIComponent(query));
+        const response = await fetch(
+          `/search/${encodeURIComponent(query)}?page=${currentPage}`
+        );
         if (response.status === 429) {
           resultsContainer.innerHTML =
             '<p style="color: red;">You are making too many requests. Please try again later or authorize.</p>';
+          updatePagination(currentPage, false); // No further pages if rate-limited
         } else if (response.ok) {
-          const creators = await response.json();
-          displayResults(creators);
+          const data = await response.json();
+          const creators = data.results || [];
+          const hasNextPage = data.hasNextPage || false;
+
+          displayResults(creators); // Pass results to renderer
+          updatePagination(currentPage, hasNextPage); // Update pagination controls
         } else {
           const error = await response.json();
           resultsContainer.innerHTML =
             '<p style="color: red;">Error: ' +
             (error.message || 'Unknown error') +
             '</p>';
+          updatePagination(currentPage, false); // No further pages on error
         }
       } catch (err) {
         console.error('Search request failed:', err);
         resultsContainer.innerHTML =
           '<p style="color: red;">Unexpected error occurred.</p>';
+        updatePagination(currentPage, false);
       }
     } else {
       resultsContainer.innerHTML = ''; // Clear results if query is too short
+      updatePagination(currentPage, false); // Reset pagination for short query
     }
   }
 
-  searchInput.addEventListener('input', performSearch);
+  function updatePagination(currentPage, hasNextPage) {
+    const prevButton = document.getElementById('prevPage');
+    const nextButton = document.getElementById('nextPage');
 
+    prevButton.style.display = currentPage > 1 ? 'inline-block' : 'none';
+    nextButton.style.display = hasNextPage ? 'inline-block' : 'none';
+
+    prevButton.onclick = () => {
+      performSearch(currentPage - 1);
+    };
+
+    nextButton.onclick = () => {
+      performSearch(currentPage + 1);
+    };
+  }
+
+  // Add event listeners
+  searchInput.addEventListener('input', () => performSearch(1));
   // Add creator functionality
   const addCreatorForm = document.getElementById('addCreatorForm');
   const addCreatorInput = document.getElementById('addCreatorInput');

@@ -120,6 +120,7 @@ Tasks done:
 - Security enhancements.
 - Rate Limiting
 - Add terms and privacy
+- Add pagination for search results
 
 ## SWOT Analysis
 

@@ -207,49 +207,62 @@ const HomeView = () => html`
     </head>
     <body>
       ${NavBar()}
-      <!-- Insert NavBar at the top -->
-
       <h1>Welcome to Creator Finder</h1>
 
       <p class="description">
-        Creator Finder is a tool that helps you discover and organize the
-        creators you follow across different platforms, like YouTube and
-        Patreon. Use the search bar to find creators or add new ones manually.
-        You can even import your YouTube subscriptions for a seamless
-        experience.
+        Creator Finder helps you discover and organize creators, links, and
+        social platforms like YouTube and Patreon. Use the search bar to find
+        creators or add new ones manually. You can also import your YouTube
+        subscriptions for a seamless experience.
       </p>
 
       <p class="youtube-auth-description">
-        To import your subscriptions automatically, click Authorize YouTube
-        Access:
+        To import your subscriptions automatically, click:
         <button id="authorizeButton">Authorize YouTube Access</button>
       </p>
 
       <!-- Add Creator Section -->
       <div class="input-section">
-        <label for="addCreatorInput"
-          ><strong>Add a New Creator by Handle or URL</strong></label
-        >
         <form id="addCreatorForm">
-          <input
-            type="text"
-            id="addCreatorInput"
-            placeholder="Enter YouTube handle or URL..."
-          />
-          <button type="submit">Add Creator</button>
+          <label for="addCreatorInput"
+            ><strong>Add a New Creator by Handle or URL:</strong></label
+          >
+          <div
+            style="display: flex; align-items: center; gap: 10px; margin-top: 5px;"
+          >
+            <input
+              type="text"
+              id="addCreatorInput"
+              placeholder="Enter YouTube handle or URL..."
+            />
+            <button type="submit">Add Creator</button>
+          </div>
         </form>
       </div>
 
-      <div class="input-section">
-        <label for="searchInput"><strong>Search for Creators</strong></label>
+      <!-- Search Section -->
+      <div class="input-section" style="margin-top: 20px;">
+        <label for="searchInput"
+          ><strong>Search for Creators, Links, and Platforms:</strong></label
+        >
         <input
           type="text"
           id="searchInput"
           placeholder="Search for creators..."
         />
       </div>
-      <!-- Results and Search Section -->
+
+      <!-- Results Section -->
       <div id="resultsContainer"></div>
+
+      <!-- Pagination -->
+      <div
+        id="paginationContainer"
+        style="text-align: center; margin-top: 20px;"
+      >
+        <button id="prevPage" style="display: none;">Previous</button>
+        <button id="nextPage" style="display: none;">Next</button>
+      </div>
     </body>
   </html>
 `;
@@ -715,9 +728,17 @@ async function getOrCreateCreator(db: D1Database, name: string) {
 app.get('/search/:query', async (c) => {
   try {
     const query = c.req.param('query') || '';
+    const page = parseInt(c.req.query('page') || '1', 10);
+    const pageSize = 20;
+    const offset = (page - 1) * pageSize;
+
     if (typeof query !== 'string' || query.length > 255) {
       return c.json({ error: 'Invalid search query' }, 400);
     }
+    if (page < 1) {
+      return c.json({ error: 'Invalid pagination parameters' }, 400);
+    }
+
     const subscribedIds = (getCookie(c, 'subscribed_creators') ?? '')
       .split(',')
       .filter(Boolean)
@@ -738,17 +759,22 @@ app.get('/search/:query', async (c) => {
       sql += ` AND creators.id IN (${subscribedIds.join(',')})`;
     }
 
-    sql += ` ORDER BY creators.name`;
+    sql += ` ORDER BY creators.name LIMIT ? OFFSET ?`;
 
     const results = await c.env.DB.prepare(sql)
-      .bind(`%${query}%`, `%${query}%`, `%${query}%`)
+      .bind(`%${query}%`, `%${query}%`, `%${query}%`, pageSize, offset)
       .all();
 
     if (!results.results?.length) {
       return c.json({ message: 'No creators found.' }, 404);
     }
 
-    return c.json(results.results);
+    return c.json({
+      results: results.results,
+      page,
+      pageSize,
+      hasNextPage: results.results.length === pageSize,
+    });
   } catch (e) {
     console.error(e);
     return c.json({ error: e.message || `Unknown error: ${e}` }, 500);

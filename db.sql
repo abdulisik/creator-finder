@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS domains (
   quantity INTEGER DEFAULT 0  -- Keeps track of link count for each domain
 );
 
-CREATE INDEX IF NOT EXISTS idx_creators_name ON creators(name);
-CREATE INDEX IF NOT EXISTS idx_links_link ON links(link);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_creators_name ON creators(name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_links_link ON links(link);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_domains_domain ON domains(domain);
-CREATE INDEX IF NOT EXISTS idx_links_handle_creator ON links (handle, creator_id);
+CREATE INDEX IF NOT EXISTS idx_links_creator_id ON links(creator_id);

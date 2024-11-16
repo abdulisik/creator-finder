@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS links (
   creator_id INTEGER,
   platform TEXT,
   handle TEXT,
-  link TEXT NOT NULL,
+  link TEXT UNIQUE NOT NULL,
   discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  discovered_on TEXT,
+  discovered_on TEXT NOT NULL,
   FOREIGN KEY (creator_id) REFERENCES creators(id) ON DELETE CASCADE
 );
 
@@ -36,16 +36,4 @@ CREATE TABLE IF NOT EXISTS domains (
 CREATE INDEX IF NOT EXISTS idx_creators_name ON creators(name);
 CREATE INDEX IF NOT EXISTS idx_links_link ON links(link);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_domains_domain ON domains(domain);
-CREATE INDEX IF NOT EXISTS idx_links_creator_id ON links(creator_id);
-
--- Insert sample data into creators table
-INSERT INTO creators (name, discovered_on) VALUES 
-  ('Marques Brownlee', 'YouTube');
-
--- Insert sample data into links table, associating each link with a creator
-INSERT INTO links (creator_id, platform, handle, link, discovered_on) VALUES 
-  (1, 'youtube', '@mkbhd', 'https://www.youtube.com/@mkbhd', 'YouTube');
-
--- Insert sample data into domains table
-INSERT INTO domains (domain, platform, quantity) VALUES
-  ('youtube.com', 'youtube', 1);
+CREATE INDEX IF NOT EXISTS idx_links_handle_creator ON links (handle, creator_id);

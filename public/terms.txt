@@ -18,23 +18,30 @@ Terms of Use
 
 
 Privacy Policy
-
     Data Collected:
-        Public Data: We only store publicly available data, such as links found in video descriptions or creator profile pages.
-        Local Storage: Subscriptions and preferences are stored locally in your browser cookies or local storage.
-        Analytics: We use Cloudflare's privacy-preserving analytics to monitor basic usage metrics. No personally identifiable information is collected.
+        Public Data: We store publicly available data, such as links found in video descriptions or creator profile pages.
+        Local Storage: Your subscriptions and preferences are stored locally on your device using cookies or local storage.
+        Google User Data: With your explicit consent, we access your YouTube subscription data to organize and display public information about creators you follow. This data is used exclusively to provide the services you requested, such as displaying your subscribed creators and enhancing your experience.
+
+    Data Usage:
+        Purpose: Your data is used solely to provide the requested services, including organizing your creator subscriptions and enabling platform-specific features.
+        No Selling: We will never sell your data to third parties.
+        Third-Party Sharing: We may share data with partners only when necessary to provide core services (e.g., external API providers) while adhering to their privacy policies.
+
+    Data Protection:
+        Access Tokens: Your Google access token is securely stored in an HttpOnly, Secure cookie and is never stored on our servers.
+        Encryption: We use HTTPS encryption for all data transmissions to ensure your data remains secure.
+        Confidentiality: Security procedures are in place to safeguard your data, including monitoring and restricting unauthorized access to our systems.
+        Minimal Retention: We only store public creator data on our servers. Sensitive or private user information is not retained.
 
     Logs:
-        All server logs are automatically deleted after 7 days, as per Cloudflare Workers Logs limitations. These logs are only used for troubleshooting purposes.
-
-    Third-Party APIs:
-        We use external APIs (e.g., YouTube) for data importing and authorization. Each API follows its own privacy policies, which are linked during the authorization process.
+        Server logs are automatically deleted after 7 days per Cloudflare Workers Logs limitations. Logs are used solely for troubleshooting and performance monitoring.
 
     No Data Sharing or Selling:
-        We do not share, sell, or resell user data. All data stored on our servers is publicly available, and user-specific information is only held locally on your device.
+        We do not sell, share, or resell user data. Any data retained on our servers is strictly public information. User-specific data is kept local to your device.
 
     Data Deletion:
-        For GDPR, CCPA, or similar compliance needs, simply clear your browser cookies and local storage to remove all data related to this website.
+        To comply with GDPR, CCPA, or similar regulations, clear your browser cookies and local storage to delete all data related to this website.
 
     Contact Us:
         For inquiries regarding publicly available data usage or other concerns, please contact us at inquiries@abdulisik.com.

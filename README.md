@@ -121,6 +121,7 @@ Tasks done:
 - Rate Limiting
 - Add terms and privacy
 - Add pagination for search results
+- Offload fetching YouTube subscriptions via Queues to greatly speed up onboarding.
 
 ## SWOT Analysis
 
@@ -209,6 +210,8 @@ Database: Cloudflare D1, a distributed SQL database, to store and manage creator
 Data Collection: YouTube API integration for automated link extraction from YouTube channels, with future potential for additional API integrations.
 
 Hosting: Full stack hosting on Cloudflare for a streamlined, scalable deployment.
+
+Paid Tier: Uses non-free Cloudflare Queues for asynchronous processing, check commit log if you want to revert. Workers Free is also limited to 50 subrequests, meaning you'll need to retry the request repeatedly during authorization, although it does work with that caveat.
 
 ## Development
 

@@ -9,14 +9,15 @@ import { cloudflareRateLimiter } from '@hono-rate-limiter/cloudflare';
 
 type AppType = {
   Bindings: {
-    rateLimit: boolean;
+    DB: D1Database;
+    LIMIT: RateLimit;
     ORIGIN: string[];
     PAGE_SIZE: number;
-    DB: D1Database;
+    rateLimit: boolean;
+    readonly LINK_QUEUE: Queue;
     YOUTUBE_API_KEY: string;
     YOUTUBE_CLIENT_ID: string;
     YOUTUBE_CLIENT_SECRET: string;
-    LIMIT: RateLimit;
   };
 };
 
@@ -681,7 +682,7 @@ async function addCreators(c: Context, handles: string[]) {
     try {
       const link = sanitizeAndFormatLink(handle);
 
-      // Step 2: Check if Link Already Exists in Database
+      // Check if Link Already Exists in Database
       const existingLinkId = await db
         .prepare(`SELECT id FROM links WHERE link = ?`)
         .bind(link)
@@ -692,38 +693,29 @@ async function addCreators(c: Context, handles: string[]) {
         continue;
       }
 
-      // Step 3: Call handleYouTubeCreator to Extract URLs
-      const result = await handleYouTubeCreator(link, c.env.YOUTUBE_API_KEY);
-      if (!result.success) {
-        errorMessages.push(
-          `Handle: ${handle}, Error: ${result.error ?? 'Unknown error'}`
-        );
-        continue;
-      }
-      if (result.urls.length === 0) continue;
-
-      // Step 4: Insert New Creator if Link is New
-      const { channelName, urls } = result;
-      const creatorId = await getOrCreateCreator(db, channelName ?? handle);
-
-      // Step 5: Insert the main YouTube link we've used
+      // Insert the main YouTube link with a null creator_id
       const mainLinkResult = await processAndInsertLink(
         db,
-        creatorId,
+        null, // creator_id is unknown at this stage
         link,
         handle,
         'Youtube'
       );
-      if (mainLinkResult.success) {
-        addedLinkIds.push(mainLinkResult.linkId);
+
+      if (!mainLinkResult.success) {
+        errorMessages.push(`Handle: ${handle}, Error: ${mainLinkResult.error}`);
+        continue;
       }
 
-      // Step 6: Process and Insert Each Extracted URL
-      const urlInsertionPromises = urls.map(
-        async (url) =>
-          await processAndInsertLink(db, creatorId, url, null, link)
-      );
-      await Promise.all(urlInsertionPromises);
+      addedLinkIds.push(mainLinkResult.linkId);
+
+      // Enqueue the task for further processing
+      const queuePayload = {
+        link,
+        handle,
+        linkId: mainLinkResult.linkId,
+      };
+      await c.env.LINK_QUEUE.send(queuePayload);
     } catch (error) {
       console.error(`Error processing handle: ${handle}`, error);
       errorMessages.push(
@@ -735,34 +727,58 @@ async function addCreators(c: Context, handles: string[]) {
   // Update the cookie with all added link IDs
   await addLinksToCookie(c, addedLinkIds);
 
-  if (addedLinkIds.length === 0) {
-    return {
-      success: errorMessages.length === 0,
-      error: errorMessages.join('\n'),
-      creators: ['No new creators added'],
-    };
-  }
-
-  // Return the names of the creators that were added
-  const addedTitlesResult = await db
-    .prepare(
-      `SELECT creators.name
-       FROM creators
-       LEFT JOIN links ON creators.id = links.creator_id
-       WHERE links.id IN (${addedLinkIds.join(',')})`
-    )
-    .all();
-
-  const addedTitles =
-    addedTitlesResult.results?.map((row) => row?.name ?? 'A YouTube Creator') ||
-    [];
-
   return {
-    success: true,
+    success: addedLinkIds.length > 0,
     error: errorMessages.join('\n'),
-    creators: addedTitles,
+    creators: ['Queued for processing'], // TODO: Creator names will be fetched asynchronously
   };
 }
+
+export default {
+  fetch: app.fetch,
+  async queue(batch: MessageBatch<any>, env: AppType['Bindings']) {
+    const db: D1Database = env.DB;
+
+    for (const message of batch.messages) {
+      const { link, handle, linkId } = message.body;
+      try {
+        // Fetch channel metadata and related URLs
+        const result = await handleYouTubeCreator(link, env.YOUTUBE_API_KEY);
+        if (!result.success) {
+          console.error(
+            `Failed to process link ${link}: ${result.error ?? 'Unknown error'}`
+          );
+          message.retry();
+          continue;
+        }
+
+        const { channelName, urls } = result;
+
+        // Get or create the creator
+        const creatorId = await getOrCreateCreator(db, channelName ?? handle);
+
+        // Update the main link with the resolved creator_id
+        await db
+          .prepare(
+            `UPDATE links
+             SET creator_id = ?
+             WHERE id = ?`
+          )
+          .bind(creatorId, linkId)
+          .run();
+
+        // Insert additional URLs
+        for (const url of urls) {
+          await processAndInsertLink(db, creatorId, url, null, link);
+        }
+        message.ack();
+      } catch (error) {
+        console.error(`Error processing queue task for ${link}:`, error);
+        message.retry();
+      }
+    }
+  },
+};
 
 // Utility function to insert or get existing creator
 async function getOrCreateCreator(db: D1Database, name: string) {
@@ -927,5 +943,3 @@ app.get('/subscriptions', async (c) => {
     />
   );
 });
-
-export default app;

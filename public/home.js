@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsContainer = document.getElementById('resultsContainer');
 
   async function performSearch(currentPage = 1) {
-    const query = searchInput.value;
+    const query = searchInput.value.trim();
 
     if (query.length > 2) {
       try {

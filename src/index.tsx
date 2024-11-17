@@ -541,9 +541,9 @@ async function handleYouTubeCreator(
 
 async function processAndInsertLink(
   db: D1Database,
-  creatorId: number,
+  creatorId: number | null,
   url: string,
-  handle: string,
+  handle: string | null,
   discovered_on: string
 ) {
   try {
@@ -566,8 +566,13 @@ async function processAndInsertLink(
     // Insert link into links table using RETURNING to fetch the ID
     const linkId = await db
       .prepare(
-        `INSERT OR IGNORE INTO links (creator_id, platform, handle, link, discovered_on)
+        `INSERT INTO links (creator_id, platform, handle, link, discovered_on)
          VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(link) DO UPDATE SET
+           creator_id = CASE
+             WHEN creator_id IS NULL THEN excluded.creator_id
+             ELSE creator_id
+           END
          RETURNING id`
       )
       .bind(creatorId, finalPlatform, handle, url, discovered_on)
@@ -576,13 +581,14 @@ async function processAndInsertLink(
       return { success: true, error: '', linkId };
     }
 
+    // Check if the link already exists (fallback for unexpected failures)
     const existingLinkId = await db
       .prepare(`SELECT id FROM links WHERE link = ?`)
       .bind(url)
       .first<number>('id');
 
     if (!existingLinkId) {
-      console.error('Serious issue with the link or db:', url);
+      console.error('Unexpected issue with the link or database:', url);
       return {
         success: false,
         error: 'Link not found in the database',

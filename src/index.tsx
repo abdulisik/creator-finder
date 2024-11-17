@@ -10,6 +10,7 @@ import { cloudflareRateLimiter } from '@hono-rate-limiter/cloudflare';
 type AppType = {
   Bindings: {
     DB: D1Database;
+    DELAY_SECONDS: number[];
     LIMIT: RateLimit;
     ORIGIN: string[];
     PAGE_SIZE: number;
@@ -745,6 +746,16 @@ export default {
         // Fetch channel metadata and related URLs
         const result = await handleYouTubeCreator(link, env.YOUTUBE_API_KEY);
         if (!result.success) {
+          if (
+            String(result.error).includes('exceeded') ||
+            String(result.error).includes('quota')
+          ) {
+            console.error('Quota exceeded. Delaying all...');
+            batch.retryAll({
+              delaySeconds: env.DELAY_SECONDS[message.attempts],
+            });
+            return;
+          }
           console.error(
             `Failed to process link ${link}: ${result.error ?? 'Unknown error'}`
           );

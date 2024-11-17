@@ -9,6 +9,7 @@ assets = { directory = "./public/" }
 [vars]
 ORIGIN = ['https://creator-finder.abdulisik.com', 'http://localhost:8787']
 PAGE_SIZE = 20
+DELAY_SECONDS = [61, 301, 3601, 43200, 43200, 43200, 43200] // 1 minute, 5 minutes, 1 hour, 12 hours...
 
 [[d1_databases]]
 binding = "DB"
@@ -21,6 +22,11 @@ database_id = "b63bac41-54e0-4c8e-8701-38c3b3b208fb"
 
 [[queues.consumers]]
   queue = "creator-finder-links"
+  dead_letter_queue = "creator-finder-links-dead"
+  max_batch_size = 100
+  max_batch_timeout = 60
+  max_retries = 5
+  retry_delay = 90
 
 [observability]
 enabled = true

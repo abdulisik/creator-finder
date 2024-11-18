@@ -24,7 +24,7 @@ database_id = "b63bac41-54e0-4c8e-8701-38c3b3b208fb"
   queue = "creator-finder-links"
   dead_letter_queue = "creator-finder-links-dead"
   max_batch_size = 100
-  max_batch_timeout = 60
+  max_batch_timeout = 10
   max_retries = 5
   retry_delay = 90
 

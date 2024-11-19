@@ -122,6 +122,7 @@ Tasks done:
 - Add terms and privacy
 - Add pagination for search results
 - Offload fetching YouTube subscriptions via Queues to greatly speed up onboarding.
+- Clarify the distinction between new user and one with subscriptions.
 
 ## SWOT Analysis
 

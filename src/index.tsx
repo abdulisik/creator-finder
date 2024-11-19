@@ -210,9 +210,12 @@ const HomeView = () => html`
 
       <p class="description">
         Creator Finder helps you discover and organize creators, links, and
-        social platforms like YouTube and Patreon. Use the search bar to find
-        creators or add new ones manually. You can also import your YouTube
-        subscriptions for a seamless experience.
+        social platforms like YouTube and Patreon. <br />
+        Use the search bar to find creators or add new ones manually. You can
+        also import your YouTube subscriptions for a seamless experience. <br />
+        <strong>Note:</strong> Search function only searches for the subscribed
+        creators once you add any. Clear the site data, or go incognito to
+        search from all known creators.
       </p>
 
       <p class="youtube-auth-description">
@@ -363,7 +366,9 @@ app.get('/process-subscriptions', async (c) => {
     if (!data.items) {
       return c.json(
         {
-          error: `No subscriptions found or insufficient permissions. ${data}`,
+          error:
+            'No subscriptions found, insufficient permissions, or quota exceeded, please retry in a minute.',
+          message: data?.error?.message || JSON.stringify(data),
         },
         403
       );
@@ -381,7 +386,7 @@ app.get('/process-subscriptions', async (c) => {
     );
     const channelData = await channelResponse.json();
 
-    const handles = channelData.items.map(
+    const handles = channelData?.items?.map(
       (item) => item.snippet.handle || item.snippet.customUrl || item.id || ''
     );
 
@@ -548,11 +553,11 @@ async function handleYouTubeCreator(
     if (channelData.error || !channelData?.items?.length) {
       // Last resort, search on YouTube and grab the first channel ID, unless we already tried it
       if (extracted.type !== 'id') {
-      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(
-        extracted.value
-      )}&key=${YOUTUBE_API_KEY}`;
-      const searchResponse = await fetch(searchUrl);
-      const searchData = await searchResponse.json();
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(
+          extracted.value
+        )}&key=${YOUTUBE_API_KEY}`;
+        const searchResponse = await fetch(searchUrl);
+        const searchData = await searchResponse.json();
         if (searchData.error || !searchData.items?.length) {
           return { error: searchData.error?.message ?? 'Channel not found' };
         }
@@ -717,8 +722,8 @@ app.post('/add', async (c) => {
     }
 
     return c.json({
-      message: 'Creator and links processed successfully',
-      creatorName: result.creators[0],
+      message:
+        'Creator and links processed successfully, will be added in a minute to your subscriptions if valid.',
     });
   } catch (error) {
     console.error('Error in /add endpoint:', error);
@@ -738,7 +743,7 @@ async function addCreators(c: Context, handles: string[]) {
         ? `https://www.youtube.com/channel/${handle}`
         : `https://www.youtube.com/${handle}`;
     } else if (/^(https?:\/\/)?(www\.)?youtube\.com/.test(link)) {
-    return link;
+      return link;
     }
     throw new Error(`Invalid YouTube link: ${link}`);
   };
@@ -795,7 +800,7 @@ async function addCreators(c: Context, handles: string[]) {
   return {
     success: addedLinkIds.length > 0,
     error: errorMessages.join('\n'),
-    creators: ['Queued for processing'], // TODO: Creator names will be fetched asynchronously
+    creators: addedLinkIds,
   };
 }
 
@@ -816,7 +821,7 @@ export default {
           ) {
             console.error('Quota exceeded. Delaying all...');
             batch.retryAll({
-              delaySeconds: env.DELAY_SECONDS[message.attempts],
+              delaySeconds: env.DELAY_SECONDS[message.attempts] || 43200,
             });
             return;
           }
@@ -880,6 +885,7 @@ app.get('/search/:query', async (c) => {
     const page = parseInt(c.req.query('page') || '1', 10);
     const pageSize = c.env.PAGE_SIZE;
     const offset = (page - 1) * pageSize;
+    let message = 'No creators found';
 
     if (typeof query !== 'string' || query.length > 255) {
       return c.json({ error: 'Invalid search query' }, 400);
@@ -912,6 +918,7 @@ app.get('/search/:query', async (c) => {
                 FROM links
                 WHERE links.id IN (${subscribedLinks.join(',')})
               )`;
+      message += ' (subscribed only, clear cookies to search all)';
     }
 
     sql += ` ORDER BY creators.name LIMIT ? OFFSET ?`;
@@ -922,7 +929,7 @@ app.get('/search/:query', async (c) => {
       .all();
 
     if (!results.results?.length) {
-      return c.json({ message: 'No creators found.' }, 404);
+      return c.json({ message }, 404);
     }
 
     return c.json({

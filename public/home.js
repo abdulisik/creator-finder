@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
               link.link +
               '" target="_blank">' +
               link.platform +
-              (link.handle ? ': @' + link.handle : '') +
+              (link.handle ? ': ' + link.handle : '') +
               '</a></li>'
             );
           })

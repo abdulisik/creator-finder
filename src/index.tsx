@@ -357,6 +357,7 @@ app.get('/process-subscriptions', async (c) => {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
+          Referer: c.env.ORIGIN[0],
         },
       }
     );
@@ -504,7 +505,8 @@ function extractUrls(description: string): string[] {
 
 async function handleYouTubeCreator(
   youtubeLink: string,
-  YOUTUBE_API_KEY: string
+  YOUTUBE_API_KEY: string,
+  origin: string
 ) {
   try {
     // Step 1: Extract identifier from YouTube Link
@@ -537,6 +539,10 @@ async function handleYouTubeCreator(
       return { error: 'Invalid YouTube link format' };
     }
 
+    const headers = {
+      'Content-Type': 'application/json',
+      Referer: origin,
+    };
     // Step 2: Build API URL based on identifier type
     let apiUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}`;
     if (extracted.type === 'id') {
@@ -547,7 +553,7 @@ async function handleYouTubeCreator(
       apiUrl += `&forHandle=${extracted.value}`;
     }
     // Step 3: Fetch channel details
-    const channelResponse = await fetch(apiUrl);
+    const channelResponse = await fetch(apiUrl, { headers });
     const channelData = await channelResponse.json();
 
     if (channelData.error || !channelData?.items?.length) {
@@ -556,7 +562,7 @@ async function handleYouTubeCreator(
         const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(
           extracted.value
         )}&key=${YOUTUBE_API_KEY}`;
-        const searchResponse = await fetch(searchUrl);
+        const searchResponse = await fetch(searchUrl, { headers });
         const searchData = await searchResponse.json();
         if (searchData.error || !searchData.items?.length) {
           return { error: searchData.error?.message ?? 'Channel not found' };
@@ -565,7 +571,8 @@ async function handleYouTubeCreator(
         if (channelId)
           return handleYouTubeCreator(
             `https://www.youtube.com/channel/${channelId}`,
-            YOUTUBE_API_KEY
+            YOUTUBE_API_KEY,
+            origin
           );
       }
       return { error: channelData.error?.message ?? 'Channel not found' };
@@ -582,7 +589,8 @@ async function handleYouTubeCreator(
 
     // Step 4: Fetch latest videos from the playlist
     const videoResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadPlaylistId}&key=${YOUTUBE_API_KEY}`
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadPlaylistId}&key=${YOUTUBE_API_KEY}`,
+      { headers }
     );
     const videoData = await videoResponse.json();
 
@@ -617,7 +625,7 @@ async function processAndInsertLink(
 ) {
   try {
     const domain = new URL(url).hostname.toLowerCase();
-    const platform = domain.replace('www.', '').replace('.com', ''); // TODO: Refactor
+    const platform = domain.replace('www.', '').replace('.com', '');
 
     // Update or insert into domains table
     const updateResult = await db
@@ -813,7 +821,11 @@ export default {
       const { link, handle, linkId } = message.body;
       try {
         // Fetch channel metadata and related URLs
-        const result = await handleYouTubeCreator(link, env.YOUTUBE_API_KEY);
+        const result = await handleYouTubeCreator(
+          link,
+          env.YOUTUBE_API_KEY,
+          env.ORIGIN[0]
+        );
         if (!result.success) {
           if (
             String(result.error).includes('exceeded') ||

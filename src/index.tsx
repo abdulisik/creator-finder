@@ -374,8 +374,19 @@ app.get('/process-subscriptions', async (c) => {
       (item) => item.snippet.resourceId.channelId
     );
 
+    const channelResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelIds.join(
+        ','
+      )}&key=${c.env.YOUTUBE_API_KEY}`
+    );
+    const channelData = await channelResponse.json();
+
+    const handles = channelData.items.map(
+      (item) => item.snippet.handle || item.snippet.customUrl || item.id || ''
+    );
+
     // Batch add creators to the database
-    const addResult = await addCreators(c, channelIds);
+    const addResult = await addCreators(c, handles);
 
     // If adding creators failed due to quota or another issue, display error
     if (!addResult.success) {
@@ -491,28 +502,80 @@ async function handleYouTubeCreator(
   YOUTUBE_API_KEY: string
 ) {
   try {
-    // Step 1: Extract Channel ID from YouTube Link
-    const channelId = youtubeLink.split('/').pop()?.replace('@', '');
+    // Step 1: Extract identifier from YouTube Link
+    const extractIdentifier = (link: string) => {
+      try {
+        const url = new URL(link);
+        const pathSegments = url.pathname.split('/').filter(Boolean);
+
+        if (pathSegments[0] === 'channel') {
+          // Example: https://www.youtube.com/channel/UC12345...
+          return { type: 'id', value: pathSegments[1] };
+        } else if (pathSegments[0] === 'user') {
+          // Example: https://www.youtube.com/user/username
+          return { type: 'forUsername', value: pathSegments[1] };
+        } else if (pathSegments[0].startsWith('@')) {
+          // Example: https://www.youtube.com/@username
+          return { type: 'handle', value: pathSegments[0] };
+        } else if (pathSegments.length === 1) {
+          // Example: https://www.youtube.com/customURL
+          return { type: 'customUrl', value: pathSegments[0] };
+        }
+      } catch (error) {
+        console.error('Invalid YouTube URL:', link);
+      }
+      return null;
+    };
+
+    const extracted = extractIdentifier(youtubeLink);
+    if (!extracted) {
+      return { error: 'Invalid YouTube link format' };
+    }
+
+    // Step 2: Build API URL based on identifier type
     let apiUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}`;
-    if (channelId?.startsWith('UC')) apiUrl += `&id=${channelId}`;
-    else apiUrl += `&forUsername=${channelId}`;
-    // Step 2: Fetch Channel Details (including name and upload playlist ID)
+    if (extracted.type === 'id') {
+      apiUrl += `&id=${extracted.value}`;
+    } else if (extracted.type === 'forUsername') {
+      apiUrl += `&forUsername=${extracted.value}`;
+    } else if (['handle', 'customUrl'].includes(extracted.type)) {
+      apiUrl += `&forHandle=${extracted.value}`;
+    }
+    // Step 3: Fetch channel details
     const channelResponse = await fetch(apiUrl);
     const channelData = await channelResponse.json();
 
-    if (channelData.error) {
-      return { error: channelData.error.message };
-    }
-    if (!channelData.items?.length) {
-      console.error('Channel not found:', channelData);
-      return { error: 'Channel not found' };
+    if (channelData.error || !channelData?.items?.length) {
+      // Last resort, search on YouTube and grab the first channel ID, unless we already tried it
+      if (extracted.type !== 'id') {
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(
+        extracted.value
+      )}&key=${YOUTUBE_API_KEY}`;
+      const searchResponse = await fetch(searchUrl);
+      const searchData = await searchResponse.json();
+        if (searchData.error || !searchData.items?.length) {
+          return { error: searchData.error?.message ?? 'Channel not found' };
+        }
+        const channelId = searchData?.items[0]?.snippet?.channelId;
+        if (channelId)
+          return handleYouTubeCreator(
+            `https://www.youtube.com/channel/${channelId}`,
+            YOUTUBE_API_KEY
+          );
+      }
+      return { error: channelData.error?.message ?? 'Channel not found' };
     }
 
     const channel = channelData.items[0];
     const channelName = channel.snippet.title;
-    const uploadPlaylistId = channel.contentDetails.relatedPlaylists.uploads; //TODO: Playlist is sometimes empty, check @spaceX for example
+    const uploadPlaylistId = channel.contentDetails?.relatedPlaylists?.uploads;
 
-    // Step 3: Get the latest videos from the playlist
+    if (!uploadPlaylistId) {
+      console.warn('Upload playlist not available for:', channelName);
+      return { success: true, channelName, urls: [] };
+    }
+
+    // Step 4: Fetch latest videos from the playlist
     const videoResponse = await fetch(
       `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadPlaylistId}&key=${YOUTUBE_API_KEY}`
     );
@@ -522,7 +585,7 @@ async function handleYouTubeCreator(
       return { success: true, channelName, urls: [] };
     }
 
-    // Extract URLs from the video descriptions
+    // Extract URLs from video descriptions
     let urls: string[] = [];
     let counter = 0;
     for (const video of videoData.items) {
@@ -534,7 +597,6 @@ async function handleYouTubeCreator(
       if (counter++) break;
     }
 
-    // Step 4: Return the urls and channel name
     return { success: true, channelName, urls };
   } catch (error) {
     return { error: error };
@@ -670,13 +732,15 @@ async function addCreators(c: Context, handles: string[]) {
   const errorMessages: string[] = [];
 
   const sanitizeAndFormatLink = (handle: string): string => {
-    let link = handle.trim();
+    const link = handle.trim();
     if (!link.startsWith('http')) {
-      link = handle.startsWith('UC')
-        ? `https://www.youtube.com/channel/${encodeURIComponent(handle)}`
-        : `https://www.youtube.com/${encodeURIComponent(handle)}`;
-    }
+      return handle.startsWith('UC')
+        ? `https://www.youtube.com/channel/${handle}`
+        : `https://www.youtube.com/${handle}`;
+    } else if (/^(https?:\/\/)?(www\.)?youtube\.com/.test(link)) {
     return link;
+    }
+    throw new Error(`Invalid YouTube link: ${link}`);
   };
 
   for (const handle of handles) {
@@ -716,7 +780,7 @@ async function addCreators(c: Context, handles: string[]) {
         handle,
         linkId: mainLinkResult.linkId,
       };
-      await c.env.LINK_QUEUE.send(queuePayload);
+      c.executionCtx.waitUntil(c.env.LINK_QUEUE.send(queuePayload));
     } catch (error) {
       console.error(`Error processing handle: ${handle}`, error);
       errorMessages.push(

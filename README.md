@@ -1,112 +1,70 @@
-# Project Concept: Creator Finder Database
+# Creator Finder Database
+
+Tired of manually hunting down your favorite YouTubers on Patreon? Creator Finder Database automatically discovers where your favorite creators post content across platforms. Starting with YouTube integration, it helps fans:
+
+- Find creators they already follow on new platforms
+- Support creators through their preferred channels
+- Discover creator content across multiple platforms
 
 ## Overview
 
-Creator Finder Database is a platform designed to help users seamlessly discover creators they already follow across different platforms like YouTube, Patreon, TikTok, and Instagram. By leveraging the existing links in social media profiles, this platform makes it easy for fans to find and support their favorite creators, even when they expand to new mediums.
+Built with modern edge computing (Cloudflare Workers, D1, Hono), Creator Finder Database provides instantaneous, global access to creator platform data with zero infrastructure overhead. Starting with YouTube integration, the service:
 
-### Objective
+- Automatically imports YouTube subscriptions to jump start discovery
+- Maps creator presence across multiple platforms
+- Enables fans to find familiar creators on new platforms (especially for platforms with limited cross discoverability like Patreon)
+- Helps creators understand and grow their cross-platform reach
 
-Build a lean, effective MVP that connects YouTube and Patreon to help users easily discover their favorite creators across both platforms. The MVP will focus on simplifying the creator discovery process, initially bridging YouTube and Patreon, with an emphasis on ease of use and reliability.
+### Current Status
 
-## Core Features for MVP
+MVP complete with YouTube integration, including:
 
-User Input: Manually add creators users follow, with future API integrations for automation.
+- YouTube subscription imports
+- Cross-platform creator search
+- Cookie-based user preferences
+- Asynchronous processing via Cloudflare Queues
 
-Link Collection: Maintain a cross-linked database of creators across platforms.
+## Known Limitations
 
-Search and Recommendation Functionality: Let users search and discover creators they follow.
-
-User and Creator Profiles: Save and track creators users are interested in, and track and explore platforms.
-
-## MVP Development Plan
-
-Research & Planning: Assess existing data sources and APIs.
-
-User Stories: Create clear user stories to guide feature building.
-
-Database Setup: Design and develop a simple, scalable schema.
-
-Data Collection: Manually gather initial data to build the foundation.
-
-Frontend & Backend: Develop a basic interface and core backend logic.
-
-Testing: Test early features internally and with selected users.
-
-## SWOT Analysis
-
-### Strengths
-
-Solves a real problem faced by users trying to discover creators across multiple platforms.
-
-Leverages existing links and APIs, providing a unique solution to cross-platform creator discovery.
-
-Potential for community contributions if open sourced, building trust and credibility.
-
-### Weaknesses
-
-Limited initial dataset and manual data collection could slow early growth.
-
-Requires API access and data scraping, which may have legal and operational challenges.
-
-MVP scope may lack features needed to quickly monetize and sustain operations.
-
-### Opportunities
-
-Growing creator economy and increased need for content discovery across platforms.
-
-Potential partnerships with creator monetization services like Patreon or affiliate marketing programs.
-
-Expansion to other platforms and open source contributions can drive growth and adoption.
-
-### Threats
-
-Platform API restrictions or changes could limit data access and functionality.
-
-Competitors, including the platforms themselves, may build similar functionality, especially if the idea gains traction.
-
-User privacy and data security issues could arise, particularly in handling creator and follower data.
+- YouTube API quota restrictions (10,000 units/day): Excess requests are queued, retried, and eventually dropped after a few days.
+- Workers subrequest limit (50 on free tier): Paid Workers plan allows 2000.
+- Cookie-based session management limitations (<700 channelIds in a cookie): Not mitigated yet.
 
 ## Future Enhancements
 
-Open Source Considerations: Evaluate open sourcing some or all parts of the project to encourage community contributions, build trust, and attract talent while balancing monetization and maintenance efforts.
+### Platform Growth
 
-Platform Integration: Incorporate API integrations to automate the import of creator lists from YouTube and other platforms.
+- Additional, easy-to-add platforms: RSS, Twitter, GitHub, Mastodon, Behance, Vimeo
+- Support for link aggregators (Linktree) and URL shorteners (Bitly)
+- Automated link context extraction and subscription status refresh
+- Integration with Google's Custom Search API and/or Knowledge Graph API
+- Extraction of Open Graph (OG) tags or other metadata from websites
+- Embed follow buttons for cross-platform discovery
 
-More Platforms: Expand to other platforms: Twitter, GitHub, Mastodon, Behance, Vimeo, RSS. Process links from data aggregators like Linktree, or shorteners like Bitly. Read link context from YouTube, refresh subscription status on each authorization, re-process stale links.
+### Data & Analytics
 
-Cross-Recommendations: Add algorithms to suggest creators across platforms based on user preferences and personas.
+- Creator analytics dashboard showing platform distribution and activity
+- Link insights and domain analysis for reducing duplicates
+- Improved platform coverage tracking
+- Domain-to-platform mapping (i.e., via Netify's data feeds)
 
-Alpha User Community Engagement: Create an early user community (e.g., Discord) to gather insights, encourage contributions, and strengthen user engagement. Add a feedback button or form, allowing users to report issues, suggest features, or share their experiences. Add a feature log or updates list on the homepage, so testers can see changes as they happen.
+### Community & UX
 
-Improve the tech stack: Recording time and place of the connections. Process data asynchronously, such as Queues when processing YouTube channels. Add pagination to search results. Add indexes to database tables.
+- In-app feedback system and feature changelog
+- Cross-platform creator recommendations
 
-Future integrations: Use Google's Custom Search API to search for links on the web. Add social media platforms' direct APIs. Use Google's Knowledge Graph API to pull public data about a creator. Extract Open Graph (OG) tags or other metadata from websites.
+### Value-Add Features
 
-Data Dashboard, Link Insights, and Improved Management: The dashboard will display basic analytics, such as total creators followed, the number of links added, and platform distribution, providing users with insights into where their favorite creators are most active. Improved link extraction and domain analysis will automate grouping links by platform, reducing duplicates and ensuring accurate platform coverage. An admin view will support effective management of popular links and domains, making it easier to decide which platforms to prioritize next. Netify’s data feeds is considered for domain-to-platform mapping.
+- Creator activity tracking across platforms
+- Platform engagement analytics
+- Data-driven insights for creator platform expansion
+- Timeline tracking for creator connections
 
-Unique Value Proposition: Our app provides a unique solution to the problem of discovering creators across multiple platforms, while addressing common creator questions, such as "Should I open an account on this other platform?" and "Can I safely close my account on a specific platform?" Through in-depth link insights and activity tracking, users will gain a clear view of where their followers are most active and which platforms provide the most engagement. This empowers creators and followers alike to make informed decisions about expanding or consolidating their social presence, streamlining platform choices based on data rather than guesswork.
+## Business Strategy
 
-## Monetization Ideas
-
-### Subscription Model
-
-Offer a premium subscription that provides advanced features such as automatic sync with YouTube and other platforms, additional platform integrations, and early access to new features.
-
-### Affiliate Marketing
-
-Partner with platforms like Patreon, YouTube, or other creator monetization services. When users find and support creators through the app, you could earn a small affiliate fee.
-
-### Creator Promotion Services
-
-Offer paid promotion options for creators who want more visibility across platforms. Creators could pay to have their profiles highlighted in searches or recommended to users.
-
-### Data Insights for Creators
-
-Provide creators with analytics on where their followers are finding them and which platforms they should consider expanding to. This could be offered as a paid service.
-
-### Advertising
-
-Introduce non-intrusive ads to free-tier users. Ads could be targeted towards users looking to support more creators or discover similar content.
+The platform can monetize through targeted features: premium subscriptions for automatic platform sync, affiliate partnerships with creator platforms, paid creator promotion opportunities, and analytics services.
+Key strengths include solving a real discovery problem and leveraging existing APIs, while managing API access limitations and privacy considerations.
+Growth opportunities exist in the expanding creator economy, though platform API changes and potential competitor solutions present challenges to monitor.
 
 ## Tools and Tech Stack
 
@@ -124,24 +82,50 @@ Paid Tier: Uses non-free Cloudflare Queues for asynchronous processing, check co
 
 ## Development
 
-To run locally:
+Prerequisites:
+
+- Hono: <https://hono.dev/docs/getting-started/cloudflare-workers>
+- Cloudflare Workers: <https://developers.cloudflare.com/workers/get-started/dashboard>
+- Cloudflare D1: <https://developers.cloudflare.com/d1/get-started>
+- YouTube API: <https://developers.google.com/youtube/v3/getting-started>
+
+Populate a local `.dev.vars` file as well as [Workers Environment Variables (Secrets)](https://developers.cloudflare.com/workers/configuration/secrets/) with the following:
+YOUTUBE_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET.
+
+Install dependencies:
 
 ```sh
 npm install
+```
+
+To run locally:
+
+```sh
 npm run dev
 ```
 
-To deploy, simply push to the main branch.
+To deploy, either:
+
+```sh
+npm run deploy
+```
+
+Or, if you have configured [Cloudflare Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds) simply push to the main branch, or open a pull request.
 
 To tail the remote logs:
 
 ```sh
-npx wrangler tail creator-finder
+npx wrangler tail <WORKERS_NAME>
 ```
 
 To reset or initialize the database:
 
 ```sh
-npx wrangler d1 execute creator_finder_db --local --file='./db.sql' # local
-npx wrangler d1 execute creator_finder_db --remote --file='./db.sql' # remote
+npx wrangler d1 execute <DATABASE_NAME> --local --file='./db.sql' # local
+npx wrangler d1 execute <DATABASE_NAME> --remote --file='./db.sql' # remote
 ```
+
+## License
+
+This project is licensed under the terms of the Mozilla Public License 2.0.
+For more details, see the [LICENSE](./LICENSE) file.

@@ -128,4 +128,4 @@ npx wrangler d1 execute <DATABASE_NAME> --remote --file='./db.sql' # remote
 ## License
 
 This project is licensed under the terms of the Mozilla Public License 2.0.
-For more details, see the [LICENSE](./LICENSE) file.
+For more details, see the [LICENSE](./LICENSE.md) file.

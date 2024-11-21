@@ -1,16 +1,17 @@
 Terms of Use
 
     Service Overview:
-    This website is a free tool to help users discover and organize public data from creators across different platforms. All data stored on our servers is publicly available and retrieved from publicly accessible sources (e.g., YouTube video descriptions).
-
+    This website is a free tool designed to help users discover and organize publicly available data from creators across various platforms. All data stored on our servers is retrieved exclusively from publicly accessible sources, such as YouTube video descriptions.
     Authorization:
-    Authorization with external platforms (e.g., YouTube) is purely optional and used solely to import publicly available data. Any authorization tokens are stored locally on your device and are not retained on our servers.
-
+    Authorization with external platforms (e.g., YouTube) is optional and used solely to import publicly available data. Authorization tokens are stored locally on your device and not retained on our servers.
     Non-Commercial Usage:
     This website is offered free for personal and non-commercial use. Commercial usage or redistribution of the data without prior permission is prohibited.
 
     Rate Limits:
     Usage is subject to rate limits to ensure fair access. Excessive requests may result in temporary restrictions.
+
+    Additional Terms:
+    This website is not affiliated with any external platforms and is not responsible for any data accuracy or reliability. By using this service, you additionally agree to be bound to the YouTube Terms of Service: https://www.youtube.com/t/terms
 
     Feedback and Donations:
     Feedback, suggestions, sponsorships, and donations are welcome to support further development of this free tool.
@@ -19,20 +20,20 @@ Terms of Use
 
 Privacy Policy
     Data Collected:
-        Public Data: We store publicly available data, such as links found in video descriptions or creator profile pages.
+        Public Data: Publicly available data, such as links found in video descriptions or creator profile pages, is stored on our servers.
         Local Storage: Your subscriptions and preferences are stored locally on your device using cookies or local storage.
-        Google User Data: With your explicit consent, we access your YouTube subscription data to organize and display public information about creators you follow. This data is used exclusively to provide the services you requested, such as displaying your subscribed creators and enhancing your experience.
+        Google User Data: With your explicit consent, we access your YouTube subscription data to organize and display public information about creators you follow. This data is used solely to provide requested services, such as displaying your subscribed creators.
 
     Data Usage:
-        Purpose: Your data is used solely to provide the requested services, including organizing your creator subscriptions and enabling platform-specific features.
-        No Selling: We will never sell your data to third parties.
-        Third-Party Sharing: We may share data with partners only when necessary to provide core services (e.g., external API providers) while adhering to their privacy policies.
+        Purpose: Your data is used exclusively to provide requested services, including organizing your creator subscriptions and enabling platform-specific features.
+        No Selling: Your data will never be sold to third parties.
+        Third-Party Sharing: Data may be shared with partners when necessary to provide core services (e.g., API providers) while adhering to their privacy policies.
 
     Data Protection:
-        Access Tokens: Your Google access token is securely stored in an HttpOnly, Secure cookie and is never stored on our servers.
-        Encryption: We use HTTPS encryption for all data transmissions to ensure your data remains secure.
-        Confidentiality: Security procedures are in place to safeguard your data, including monitoring and restricting unauthorized access to our systems.
-        Minimal Retention: We only store public creator data on our servers. Sensitive or private user information is not retained.
+        Access Tokens: Your Google access token is securely stored in an HttpOnly, Secure cookie and is not stored on our servers.
+        Encryption: HTTPS encryption is used for all data transmissions.
+        Confidentiality: We implement security procedures to safeguard your data and prevent unauthorized access.
+        Minimal Retention: Only public creator data is stored on our servers. Sensitive or private user data is not retained.
 
     Logs:
         Server logs are automatically deleted after 7 days per Cloudflare Workers Logs limitations. Logs are used solely for troubleshooting and performance monitoring.
@@ -41,7 +42,11 @@ Privacy Policy
         We do not sell, share, or resell user data. Any data retained on our servers is strictly public information. User-specific data is kept local to your device.
 
     Data Deletion:
-        To comply with GDPR, CCPA, or similar regulations, clear your browser cookies and local storage to delete all data related to this website.
+        For deleting your stored data, clear your browser cookies and local storage to delete all data related to this website.
+        Users can revoke this application's access to their data at any time by visiting the Google Security Settings: https://security.google.com/settings/
+
+    Additional Policies:
+        This application uses YouTube API Services. By using this application, you additionally agree to the Google Privacy Policy: http://www.google.com/policies/privacy
 
     Contact Us:
         For inquiries regarding publicly available data usage or other concerns, please contact us at inquiries@abdulisik.com.

@@ -221,7 +221,7 @@ const HomeView = () => html`
         also import your YouTube subscriptions for a seamless experience. <br />
         <strong>Note:</strong> Search function only searches for the subscribed
         creators once you add any. Clear the site data, or go incognito to
-        search from all known creators.
+        search from all known creators. By using this site, you agree to relevant <a href="/terms.txt">privacy policies</a>.
       </p>
 
       <p class="youtube-auth-description">

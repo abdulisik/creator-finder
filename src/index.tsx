@@ -353,6 +353,12 @@ app.get('/process-subscriptions', async (c) => {
     return c.json({ error: 'Invalid page token' }, 400);
   }
 
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+    Referer: c.env.ORIGIN[0],
+  };
+
   try {
     // Fetch subscriptions for the current page using the YouTube API
     const response = await fetch(
@@ -360,17 +366,13 @@ app.get('/process-subscriptions', async (c) => {
         pageToken ? `&pageToken=${pageToken}` : ''
       }`,
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          Referer: c.env.ORIGIN[0],
-        },
+        headers,
       }
     );
 
     const data = await response.json();
 
-    if (!data.items) {
+    if (!data.items || !Array.isArray(data.items)) {
       return c.json(
         {
           error:
@@ -389,13 +391,29 @@ app.get('/process-subscriptions', async (c) => {
     const channelResponse = await fetch(
       `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelIds.join(
         ','
-      )}&key=${c.env.YOUTUBE_API_KEY}`
+      )}`,
+      {
+        headers,
+      }
     );
     const channelData = await channelResponse.json();
 
-    const handles = channelData?.items?.map(
-      (item) => item.snippet.handle || item.snippet.customUrl || item.id || ''
-    );
+    const handles = Array.isArray(channelData?.items)
+      ? channelData?.items?.map(
+          (item) =>
+            item.snippet.handle || item.snippet.customUrl || item.id || ''
+        )
+      : [];
+
+    if (!handles.length) {
+      return c.json(
+        {
+          error: 'No handles found for channels.',
+          message: channelData?.error?.message || JSON.stringify(channelData),
+        },
+        400
+      );
+    }
 
     // Batch add creators to the database
     const addResult = await addCreators(c, handles);

@@ -16,6 +16,15 @@ node_modules/
 package-lock.json
 .wrangler
 
+# SvelteKit
+.svelte-kit/
+frontend/src/index.tsx
+frontend/src/index.tsx.map
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
 # env
 .env
 .env.production

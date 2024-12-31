@@ -2,7 +2,8 @@
   "name": "creator-finder",
   "scripts": {
     "dev": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy --minify",
+    "deploy": "wrangler deploy --minify",
+    "deploy:preview": "npx wrangler versions upload",
     "build:frontend": "npm run build --prefix frontend",
     "build": "npm run build:frontend"
   },

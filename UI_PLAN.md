@@ -189,6 +189,10 @@
   - Add ARIA labels and ensure proper keyboard navigation.
 - **7.5 – Clean up**
   - Clean up old code, including tsconfig.json and package.json. (i.e., JSX)
+  - Database has invalid links.
+- **7.6 – Leftover Tasks**
+  - Add dynamic text hints that change every few seconds (suggest popular searches).
+  - Implement 300ms debounce on typing to prevent flooding requests.
 
 ### **Commit Message:**
 

@@ -32,7 +32,7 @@ type AppType = {
 const app = new Hono<AppType>();
 
 // Route all frontend traffic to SvelteKit handler
-app.all('*', async (c) => {
+app.all('/', async (c) => {
   return await handle.fetch(c.req.raw, c.env, c.executionCtx);
 });
 

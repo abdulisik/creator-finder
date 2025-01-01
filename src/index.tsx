@@ -12,6 +12,7 @@ import { html } from 'hono/html';
 import fetch from 'node-fetch';
 import { setCookie, getCookie } from 'hono/cookie';
 import { cloudflareRateLimiter } from '@hono-rate-limiter/cloudflare';
+import handle from '../frontend/.svelte-kit/cloudflare/_worker.js';
 
 type AppType = {
   Bindings: {
@@ -29,6 +30,11 @@ type AppType = {
 };
 
 const app = new Hono<AppType>();
+
+// Route all frontend traffic to SvelteKit handler
+app.all('/', async (c) => {
+  return await handle.fetch(c.req.raw, c.env, c.executionCtx);
+});
 
 app.use(async (c: Context, next) => {
   cors({

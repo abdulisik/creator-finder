@@ -1,74 +1,5 @@
 # **Milestone-Based Development Plan for UI Revamp**
 
-## **Milestone 1: Svelte App Initialization and Basic Home Page**
-
-**Goal:** Establish the Svelte framework and replace the existing HTMX home page with a basic but functional Svelte UI.
-
-### **Tasks:**
-
-- **1.1 – Initialize SvelteKit (if not done)**
-  - Set up the project under `frontend/`.
-  - Ensure the `adapter-cloudflare` is properly configured.
-  - Link the Svelte build output `_worker.js` to Hono’s `index.tsx` for routing.
-- **1.2 – Replace Home Page (`/`) with Basic Svelte Layout**
-  - Create `+page.svelte` for the landing page.
-  - Implement a **centered, responsive search bar**.
-  - Integrate with the existing `/search/:query` Hono route.
-  - Add dynamic text hints that change every few seconds (suggest popular searches).
-- **1.3 – Implement Real-time Search (300ms Debounce)**
-
-  - Use Svelte’s `on:input` to trigger search after typing pauses.
-  - Fetch search results without refreshing the page.
-  - Implement 300ms debounce on typing to prevent flooding requests.
-  - Basic list view for results (unstyled for now).
-
-- **1.4 – Test Backend Connection**
-  - Verify the backend API routes (`/search/:query`) return results correctly.
-  - Check for unauthorized state handling (return only one page).
-
-### **Commit Message:**
-
-`feat: Initialize Svelte and replace basic Home page with real-time search`
-
----
-
-## **Milestone 2: Hero Section and CTA (Search and Authorization)**
-
-**Goal:** Design the homepage’s main interaction points (search and authorization CTA).
-
-### **Tasks:**
-
-- **2.1 – Design Responsive Hero Section**
-
-  - Headline: “Find Your Favorite Creators Across Platforms.”
-  - Subtext + **collapsible info section** (1-2 lines).
-  - Place search bar below the hero text.
-
-- **2.2 – Floating CTA for Authorization**
-
-  - Create a floating **“Find More Creators”** button (bottom-right).
-  - Clicking opens a **modal** with two options:
-        1. **Authorize YouTube** – Connects to `/callback`.
-        2. **Add Channel by URL** – Simple input for manual addition, linked to `/add`.
-  - Explain why authorization unlocks more creators (within modal).
-  - Display dynamic floating banner post-authorization.
-  - Track progress (e.g., "5/35 subscriptions processed").
-
-- **2.3 – Dynamic Authorization Nudge**
-
-  - If unauthorized, nudge the user below search results:
-        > “Searching within limited results. [Authorize] to unlock more.”
-
-- **2.4 – Mobile Responsiveness for Hero Section**
-  - Ensure search bar scales for mobile screens (sticky bar on scroll).
-  - CTA button shifts to top for easier reach.
-
-### **Commit Message:**
-
-`feat: Add responsive Hero section with floating authorization CTA`
-
----
-
 ## **Milestone 3: Advanced Search Results and Pagination**
 
 **Goal:** Enhance the search results section with a seamless, paginated experience.
@@ -189,10 +120,17 @@
   - Add ARIA labels and ensure proper keyboard navigation.
 - **7.5 – Clean up**
   - Clean up old code, including tsconfig.json and package.json. (i.e., JSX)
+  - Update README.md.
+  - Eliminate static files.
+  - Make sure content fits within the viewport, including the search results.
   - Database has invalid links.
 - **7.6 – Leftover Tasks**
   - Add dynamic text hints that change every few seconds (suggest popular searches).
   - Implement 300ms debounce on typing to prevent flooding requests.
+  - Improve CTA modal with more explanations, clear and separated buttons.
+  - Integrate /process-subscriptions route with the Progress Banner, make it parallel.
+  - Fix the cookie check for nudge.
+  - Improve mobile view.
 
 ### **Commit Message:**
 

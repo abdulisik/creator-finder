@@ -1,34 +1,5 @@
 # **Milestone-Based Development Plan for UI Revamp**
 
-## **Milestone 3: Advanced Search Results and Pagination**
-
-**Goal:** Enhance the search results section with a seamless, paginated experience.
-
-### **Tasks:**
-
-- **3.1 – Refactor `/search/:query` to Hono Function**
-  - Extract the current route logic into a function (`searchCreators()`).
-  - Import and call this function from within Svelte (`load()` in `+page.svelte`).
-- **3.2 – Search Results Display (Group by Creator)**
-  - List results as **creator cards**.
-  - Implement skeleton loaders during fetching.
-  - Expandable for viewing linked platforms.
-  - Add **platform icons** for visual clarity (YouTube, Patreon, etc.).
-- **3.3 – Pagination and Infinite Scroll**
-  - Implement infinite scrolling (lazy load more results).
-  - Fallback to **numbered pagination** if scrolling degrades performance.
-- **3.4 – Unauthorized State Handling**
-  - Limit unauthorized users to **one page of results**.
-  - Show **“Upgrade” banner** prompting authorization for more results.
-- **3.5 – No Results Fallback**
-  - If no results are found, suggest creators from the general database with a “Suggested” tag.
-
-### **Commit Message:**
-
-`feat: Implement grouped search results with infinite scroll and fallback`
-
----
-
 ## **Milestone 4: Subscriptions Management Page**
 
 **Goal:** Create a dashboard for managing YouTube subscriptions.
@@ -119,17 +90,22 @@
 - **7.4 – Accessibility Improvements**
   - Add ARIA labels and ensure proper keyboard navigation.
 - **7.5 – Clean up**
+  - Clean up warnings, lints and errors.
+  - Refactor hono routes to internal functions.
   - Clean up old code, including tsconfig.json and package.json. (i.e., JSX)
   - Update README.md.
   - Eliminate static files.
+  - Add Navbar.
   - Make sure content fits within the viewport, including the search results.
   - Database has invalid links.
-- **7.6 – Leftover Tasks**
+  - Speed up the decoupled subscription processing route. It is pretty fast when there are no new subscriptions.
+  - Migrate to Svelte 5.
   - Add dynamic text hints that change every few seconds (suggest popular searches).
   - Implement 300ms debounce on typing to prevent flooding requests.
   - Improve CTA modal with more explanations, clear and separated buttons.
   - Integrate /process-subscriptions route with the Progress Banner, make it parallel.
-  - Fix the cookie check for nudge.
+  - Fix the cookie read on mount.
+  - Scrolling is broken with search results.
   - Improve mobile view.
 
 ### **Commit Message:**

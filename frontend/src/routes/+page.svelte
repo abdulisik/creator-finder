@@ -19,6 +19,8 @@
     subscribedLinks = cookieValue
       ? cookieValue.split(',').map(Number).filter((id) => Number.isInteger(id))
       : [];
+
+    unauthorized = subscribedLinks.length < 10;
   });
 
   // Simulate post-authorization import progress
@@ -35,37 +37,50 @@
   
   let query = '';
   let results = [];
-  let unauthorized = false;
+  let loading = false;
+  let unauthorized = true;
   let error = null;
   let showDetails = false;
+  let currentPage = 1;
+  let hasNextPage = false;
 
   // Reactive fetch triggered by query changes
   $: if (query.length > 0) {
     fetchResults();
   } else {
     results = [];
-    unauthorized = false;
   }
 
-  async function fetchResults() {
+  async function fetchResults(page = 1) {
+    if (query.length === 0) {
+      results = [];
+      return;
+    }
+    loading = true;
+    currentPage = page;
     try {
-      const res = await fetch(`/search/${encodeURIComponent(query)}`);
+      const res = await fetch(`/search/${encodeURIComponent(query)}?page=${page}`);
       const data = await res.json();
 
       if (res.status === 403) {
         unauthorized = true;
+        results = data.results || [];
+        hasNextPage = false;
       } else {
-        unauthorized = false;
         results = groupResults(data.results || []);
+        hasNextPage = (data.hasNextPage && !unauthorized) || false;
       }
     } catch (err) {
-      console.error('Search failed', err);
-      error = 'Failed to fetch results. Please try again.';
+      console.error('Error fetching results:', err);
+      error = 'Failed to load results. Please try again.';
+    } finally {
+      loading = false;
     }
   }
 
+  // Group results by creator
   function groupResults(creators) {
-    if (!creators?.length) return [];
+    if (!Array.isArray(creators) || !creators?.length) return [];
 
     return creators.reduce((acc, creator) => {
       const existing = acc.find((c) => c.name === creator.name);
@@ -74,18 +89,30 @@
         handle: creator.handle,
         url: creator.link
       };
-
       if (existing) {
         existing.links.push(link);
       } else {
         acc.push({
           name: creator.name,
-          links: [link]
+          links: [link],
+          expanded: true
         });
       }
-
       return acc;
     }, []);
+  }
+
+  function toggleExpand(index) {
+    results[index].expanded = !results[index].expanded;
+  }
+
+  function updateQuery(suggestion) {
+    query = suggestion;
+    fetchResults(1);
+  }
+
+  function changePage(delta) {
+    fetchResults(currentPage + delta);
   }
 
   function getPlatformIcon(platform) {
@@ -93,7 +120,9 @@
       youtube: '📺',
       patreon: '🎉',
       twitter: '🐦',
-      instagram: '📸'
+      instagram: '📸',
+      facebook: '📘',
+      ko_fi: '☕',
     };
     return icons[platform.toLowerCase()] || '🔗';
   }
@@ -154,7 +183,115 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   }
   .results {
-    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 40px;
+    text-align: left;
+  }
+  .creator-card {
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #1e1e1e;
+    border-radius: 10px;
+  }
+  .pagination {
+    text-align: center;
+    margin: 20px 0;
+  }
+  .pagination button {
+    margin: 0 10px;
+    padding: 10px 15px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .pagination button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+  }
+  .search-bar {
+    max-width: 600px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    font-size: 1rem;
+    outline: none;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 50;
+  }
+  .spacer {
+    height: 120px;
+  }
+  .creator-header {
+    font-weight: bold;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .platform-link {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+  }
+  .platform-link a {
+    margin-left: 10px;
+    color: #4a90e2;
+    text-decoration: none;
+  }
+  .platform-link a:hover {
+    text-decoration: underline;
+  }
+  .skeleton {
+    width: 65%;
+    max-width: 800px;
+    background: linear-gradient(90deg, #333, #444, #333);
+    border-radius: 10px;
+    margin-bottom: 25px;
+    padding: 25px;
+    animation: pulse 1.5s infinite;
+  }
+
+  .skeleton-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+  }
+
+  .skeleton-text {
+    background-color: #555;
+    border-radius: 5px;
+  }
+
+  .skeleton-link {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+  }
+
+  .skeleton-icon {
+    width: 32px;
+    height: 32px;
+    background-color: #666;
+    border-radius: 50%;
+    margin-right: 20px;
+  }
+
+  @keyframes pulse {
+    0% {
+      background-position: -200px 0;
+    }
+    100% {
+      background-position: 200px 0;
+    }
   }
   ul {
     list-style: none;
@@ -230,51 +367,88 @@
     {/if}
   </div>
 
+  <div class="spacer"></div>
+
   <input
     class="search-bar"
     type="text"
     bind:value={query}
     placeholder="Search for creators, channels, or platforms..."
+    on:input={() => fetchResults(1)}
   />
 
-  <!-- Nudge Section (Shows if unauthorized) -->
-  {#if !subscribedLinks.length && query.length > 0}
-  <div class="nudge">
-    <p>Searching within limited results. <a on:click={() => showModal = true}>Authorize</a> to unlock more.</p>
-  </div>
-  {/if}
+<!-- Skeleton Loader During Fetch -->
+{#if loading}
+<div class="results">
+  {#each Array(2) as _, i}
+    <div class="creator-card skeleton">
+      <div class="creator-header skeleton-header">
+        <div class="skeleton-text" style="width: 75%; height: 24px;"></div>
+        <div class="skeleton-text" style="width: 10%; height: 24px;"></div>
+      </div>
+      <ul>
+        {#each Array(3) as __, j}
+          <li class="skeleton-link">
+            <div class="skeleton-icon"></div>
+            <div class="skeleton-text" style="width: 85%; height: 18px;"></div>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/each}
+</div>
 
-  {#if query.length > 0}
-    {#if results.length > 0}
-      <div class="results">
-        <ul>
-          {#each results as creator (creator.name)}
-            <li>
-              <div class="creator-name">{creator.name}</div>
-              <ul>
-                {#each creator.links as link}
-                  <li>
-                    {getPlatformIcon(link.platform)}
-                    <a href={link.url} target="_blank">
-                      {link.platform}{link.handle ? `: ${link.handle}` : ''}
-                    </a>
-                  </li>
-                {/each}
-              </ul>
-            </li>
-          {/each}
-        </ul>
+
+{:else if query.length > 0 && results.length > 0}
+  <div class="results">
+    {#each results as creator, i}
+      <div class="creator-card">
+        <div class="creator-header" on:click={() => toggleExpand(i)}>
+          <span>{creator.name}</span>
+          <span>{creator.expanded ? '▼' : '▲'}</span>
+        </div>
+        {#if creator.expanded}
+          <ul>
+            {#each creator.links as link}
+              <li>
+                {getPlatformIcon(link.platform)}
+                <a href={link.url} target="_blank">
+                  {link.platform}{link.handle ? `: ${link.handle}` : ''}
+                </a>
+              </li>
+            {/each}
+          </ul>
+        {/if}
       </div>
-    {:else if unauthorized}
-      <div class="nudge">
-        <p>Limited results shown. <a href="/authorize">Authorize</a> to unlock more!</p>
-      </div>
-    {:else if error}
-      <p style="color: red;">{error}</p>
-    {:else}
-      <p>No results found. Try searching for another creator.</p>
-    {/if}
-  {/if}
+    {/each}
+
+    <!-- Pagination Section -->
+    <div class="pagination">
+      <button on:click={() => changePage(-1)} disabled={currentPage <= 1}>
+        Previous
+      </button>
+      <span>Page {currentPage}</span>
+      <button on:click={() => changePage(1)} disabled={!hasNextPage}>
+        Next
+      </button>
+    </div>
+  </div>
+{:else if unauthorized}
+  <div class="nudge">
+    <p>Limited results. <a on:click={() => showModal = true}>Authorize</a> for more.</p>
+  </div>
+{:else if error}
+  <p style="color: red;">{error}</p>
+{:else}
+  <p>No results found. Try another search.</p>
+  <div class="suggested">
+    <h3>Suggested Creators</h3>
+    <ul>
+      <li><a on:click={() => updateQuery('Linus')}>Linus Tech Tips</a></li>
+      <li><a on:click={() => updateQuery('Game')}>Games</a></li>
+    </ul>
+  </div>
+{/if}
 </div>
 
 <FloatingButton />

@@ -1,22 +1,48 @@
-<script>
-  import { run } from 'svelte/legacy';
-
+<script lang="ts">
   import { onMount } from 'svelte';
   import FloatingButton from './FloatingButton.svelte';
   import ProgressBanner from './ProgressBanner.svelte';
   import Modal from './Modal.svelte';
   import { parseSubscribedLinks } from '@/lib/cookies';
 
-  let progress = $state(0);
-  let total = $state(0);
-  let subscribedLinks = [];
-  let showModal = $state(false);
+  interface Creator {
+    name: string;
+    platform: string;
+    handle: string;
+    link: string;
+  }
 
-  // Check for authorization cookie
+  interface GroupedCreator {
+    name: string;
+    links: Array<{
+      platform: string;
+      handle: string;
+      url: string;
+    }>;
+    expanded: boolean;
+  }
+
+  interface SearchResponse {
+    results: Creator[];
+    hasNextPage: boolean;
+  }
+
+  let progress = $state<number>(0);
+  let total = $state<number>(0);
+  let subscribedLinks: number[] = [];
+  let showModal = $state<boolean>(false);
+  let query = $state<string>('');
+  let results = $state<GroupedCreator[]>([]);
+  let loading = $state<boolean>(false);
+  let unauthorized = $state<boolean>(true);
+  let error = $state<string>('');
+  let showDetails = $state<boolean>(true);
+  let currentPage = $state<number>(1);
+  let hasNextPage = $state<boolean>(false);
+
   onMount(() => {
     subscribedLinks = parseSubscribedLinks();
     unauthorized = subscribedLinks.length < 10;
-    // Check if this is the first visit
     const hasVisited = localStorage.getItem('hasVisited');
     if (!hasVisited) {
       showDetails = true;
@@ -26,29 +52,7 @@
     }
   });
 
-  // Simulate post-authorization import progress
-  let importInterval;
-  function simulateProgress() {
-    total = 35; // Example total
-    importInterval = setInterval(() => {
-      progress += 1;
-      if (progress >= total) {
-        clearInterval(importInterval);
-      }
-    }, 1000);
-  }
-  
-  let query = $state('');
-  let results = $state([]);
-  let loading = $state(false);
-  let unauthorized = $state(true);
-  let error = $state(null);
-  let showDetails = $state(true);
-  let currentPage = $state(1);
-  let hasNextPage = $state(false);
-
-
-  async function fetchResults(page = 1) {
+  async function fetchResults(page: number = 1): Promise<void> {
     if (query.length === 0) {
       results = [];
       return;
@@ -57,16 +61,17 @@
     currentPage = page;
     try {
       const res = await fetch(`/search/${encodeURIComponent(query)}?page=${page}`);
-      const data = await res.json();
+      const data: SearchResponse = await res.json();
 
       if (res.status === 403) {
         unauthorized = true;
-        results = data.results || [];
+        results = data.results ? groupResults(data.results) : [];
         hasNextPage = false;
       } else {
         results = groupResults(data.results || []);
         hasNextPage = (data.hasNextPage && !unauthorized) || false;
       }
+      error = '';
     } catch (err) {
       console.error('Error fetching results:', err);
       error = 'Failed to load results. Please try again.';
@@ -75,11 +80,10 @@
     }
   }
 
-  // Group results by creator
-  function groupResults(creators) {
+  function groupResults(creators: Creator[]): GroupedCreator[] {
     if (!Array.isArray(creators) || !creators?.length) return [];
 
-    return creators.reduce((acc, creator) => {
+    return creators.reduce((acc: GroupedCreator[], creator: Creator) => {
       const existing = acc.find((c) => c.name === creator.name);
       const link = {
         platform: creator.platform,
@@ -99,21 +103,21 @@
     }, []);
   }
 
-  function toggleExpand(index) {
+  function toggleExpand(index: number): void {
     results[index].expanded = !results[index].expanded;
   }
 
-  function updateQuery(suggestion) {
+  function updateQuery(suggestion: string): void {
     query = suggestion;
     fetchResults(1);
   }
 
-  function changePage(delta) {
+  function changePage(delta: number): void {
     fetchResults(currentPage + delta);
   }
 
-  function getPlatformIcon(platform) {
-    const icons = {
+  function getPlatformIcon(platform: string): string {
+    const icons: Record<string, string> = {
       youtube: '📺',
       patreon: '🎉',
       twitter: '🐦',
@@ -124,14 +128,6 @@
     };
     return icons[platform.toLowerCase()] || '🔗';
   }
-  // Reactive fetch triggered by query changes
-  run(() => {
-    if (query.length > 0) {
-      fetchResults();
-    } else {
-      results = [];
-    }
-  });
 </script>
 
 <style>
@@ -142,11 +138,18 @@
   nav a {
     margin: 0 10px;
     text-decoration: none;
-    color: #333;
+    color: #2c5282;
+    padding: 5px;
   }
   nav a:hover {
     text-decoration: underline;
   }
+  nav a:focus {
+    outline: 2px solid #2c5282;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  
   .hero {
     display: flex;
     flex-direction: column;
@@ -163,11 +166,12 @@
     font-weight: bold;
     margin-bottom: 10px;
     text-align: center;
+    color: #1a202c;
   }
   
   .subtext {
     font-size: 1rem;
-    color: #ccc;
+    color: #4a5568;
     margin-bottom: 20px;
     text-align: center;
   }
@@ -176,13 +180,13 @@
     margin-top: 10px;
     font-size: 0.9rem;
     text-align: left;
-    color: #aaa;
+    color: #4a5568;
   }
   
   .toggle-btn {
     background: none;
     border: none;
-    color: #4a90e2;
+    color: #2c5282;
     font-size: 0.9rem;
     cursor: pointer;
     text-decoration: underline;
@@ -190,7 +194,9 @@
   }
   
   .toggle-btn:focus {
-    outline: 2px solid #4a90e2;
+    outline: 2px solid #2c5282;
+    outline-offset: 2px;
+    border-radius: 2px;
   }
   
   .search-bar {
@@ -199,7 +205,7 @@
     width: 100%;
     max-width: 600px;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 2px solid #cbd5e0;
     border-radius: 25px;
     font-size: 1rem;
     outline: none;
@@ -209,7 +215,8 @@
   }
   
   .search-bar:focus {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-color: #2c5282;
+    box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.2);
   }
   
   .results {
@@ -301,41 +308,53 @@
     margin-bottom: 10px;
   }
   
-  .creator-name {
-    font-weight: bold;
-  }
-  
   .nudge {
     text-align: center;
     margin: 15px 0;
     color: #aaa;
   }
   
-  .nudge a {
+  .nudge button {
     color: #4a90e2;
     text-decoration: underline;
     cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
   }
   
+  .suggested button {
+    color: #4a90e2;
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
   /* Mobile Adjustments */
   @media (max-width: 600px) {
     .search-bar {
       font-size: 0.9rem;
     }
-    .floating-cta {
-      bottom: 15px;
-      right: 15px;
+    .creator-card {
+      padding: 10px;
+    }
+    .headline {
+      font-size: 2rem;
     }
   }
 </style>
 
-<nav>
-  <a href="/">Home</a> | <a href="/MySubs">Subscriptions</a> |
-  <a href="/terms.txt">Terms</a> | <a href="/faq.txt">FAQ</a>
+<nav aria-label="Main navigation">
+  <a href="/" aria-current={!query ? 'page' : undefined}>Home</a> | 
+  <a href="/MySubs">Subscriptions</a> |
+  <a href="/terms.txt">Terms</a> | 
+  <a href="/faq.txt">FAQ</a>
 </nav>
 
 <!-- Hero Section -->
-<div class="hero">
+<div class="hero" role="main">
   <div class="headline">Find Your Favorite Creators Across Platforms</div>
   <div class="subtext">
     Discover creators you already follow and track them across the web.
@@ -378,11 +397,12 @@
     bind:value={query}
     placeholder="Search for creators, channels, or platforms..."
     oninput={() => fetchResults(1)}
+    aria-label="Search creators"
   />
 
 <!-- Skeleton Loader During Fetch -->
 {#if loading}
-<div class="results">
+<div class="results" aria-live="polite" aria-busy="true">
   {#each Array(2) as _, i}
     <div class="creator-card skeleton">
       <div class="creator-header skeleton-header">
@@ -401,12 +421,17 @@
   {/each}
 </div>
 
-
 {:else if query.length > 0 && results.length > 0}
-  <div class="results">
+  <div class="results" aria-live="polite">
     {#each results as creator, i}
       <div class="creator-card">
-        <div class="creator-header" onclick={() => toggleExpand(i)}>
+        <div 
+          class="creator-header" 
+          onclick={() => toggleExpand(i)}
+          onkeydown={(e) => e.key === 'Enter' && toggleExpand(i)}
+          role="button"
+          tabindex="0"
+        >
           <span>{creator.name}</span>
           <span>{creator.expanded ? '▼' : '▲'}</span>
         </div>
@@ -426,19 +451,27 @@
     {/each}
 
     <!-- Pagination Section -->
-    <div class="pagination">
-      <button onclick={() => changePage(-1)} disabled={currentPage <= 1}>
+    <nav class="pagination" aria-label="Search results pagination">
+      <button 
+        onclick={() => changePage(-1)} 
+        disabled={currentPage <= 1}
+        aria-label="Previous page"
+      >
         Previous
       </button>
       <span>Page {currentPage}</span>
-      <button onclick={() => changePage(1)} disabled={!hasNextPage}>
+      <button 
+        onclick={() => changePage(1)} 
+        disabled={!hasNextPage}
+        aria-label="Next page"
+      >
         Next
       </button>
-    </div>
+    </nav>
   </div>
 {:else if unauthorized}
   <div class="nudge">
-    <p>Limited results. <a onclick={() => showModal = true}>Authorize</a> for more.</p>
+    <p>Limited results. <button onclick={() => showModal = true}>Authorize</button> for more.</p>
   </div>
 {:else if error}
   <p style="color: red;">{error}</p>
@@ -449,10 +482,11 @@
     <p>No results found. Try another search.</p>
   {/if}
   <div class="suggested">
-    <h3>Suggested Creators</h3>
+    <h3>Suggested Searches</h3>
     <ul>
-      <li><a onclick={() => updateQuery('Linus')}>Linus Tech Tips</a></li>
-      <li><a onclick={() => updateQuery('Game')}>Games</a></li>
+      <li><button onclick={() => updateQuery('Linus')}>Linus Tech Tips</button></li>
+      <li><button onclick={() => updateQuery('Game')}>Games</button></li>
+      <li><button onclick={() => updateQuery('Patreon')}>Patreon links</button></li>
     </ul>
   </div>
 {/if}

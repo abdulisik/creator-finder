@@ -6,8 +6,6 @@ Goal: Refine UX, ensure responsiveness, and improve performance.
 
   - Test search, results, and authorization modals on mobile.
   - Add proper meta descriptions and OpenGraph tags.
-  - Add ARIA labels and ensure proper keyboard navigation.
-  - Clean up warnings, lints and errors.
   - Refactor hono routes to internal functions.
   - Clean up old code, including tsconfig.json and package.json. (i.e., JSX)
   - Update README.md.
@@ -16,11 +14,11 @@ Goal: Refine UX, ensure responsiveness, and improve performance.
   - Speed up the decoupled subscription processing route. It is pretty fast when there are no new subscriptions.
   - Implement 300ms debounce on typing to prevent flooding requests.
   - Improve CTA modal with more explanations, clear and separated buttons.
-  - Integrate /process-subscriptions route with the Progress Banner, make it parallel.
-  - Improve mobile view.
-  - Add an option to remove a subscription, paginate MySubs.
-  - Modularize the files in the frontend folder.
+  - Add an option to remove a subscription, lazy load or paginate MySubs.
+  - Modularize the files in the frontend folder. SearchBar.svelte, CreatorCard.svelte, SearchResults.svelte, Pagination.svelte
+  - Use Svelte's stores for global state management, especially for: Authentication state, Search results, User preferences
   - Add tests.
   - Use local storage for subscriptions.
   - Add placeholders for future platforms.
   - Add platform icons.
+  - The chip links from YouTube descriptions aren't being read.

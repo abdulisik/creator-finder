@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import FloatingButton from './FloatingButton.svelte';
   import ProgressBanner from './ProgressBanner.svelte';
   import Modal from './Modal.svelte';
@@ -55,6 +55,7 @@
   async function fetchResults(page: number = 1): Promise<void> {
     if (query.length === 0) {
       results = [];
+      loading = false;
       return;
     }
     loading = true;
@@ -78,6 +79,20 @@
     } finally {
       loading = false;
     }
+  }
+
+  let searchTimeout: NodeJS.Timeout;
+
+  async function handleSearch() {
+    clearTimeout(searchTimeout);
+    loading = true;
+    await tick();
+    searchTimeout = setTimeout(() => fetchResults(1), 300);
+  }
+
+  function updateQuery(suggestion: string): void {
+    query = suggestion;
+    handleSearch();
   }
 
   function groupResults(creators: Creator[]): GroupedCreator[] {
@@ -105,11 +120,6 @@
 
   function toggleExpand(index: number): void {
     results[index].expanded = !results[index].expanded;
-  }
-
-  function updateQuery(suggestion: string): void {
-    query = suggestion;
-    fetchResults(1);
   }
 
   function changePage(delta: number): void {
@@ -294,44 +304,56 @@
   
   .skeleton {
     width: 100%;
-    background: linear-gradient(90deg, #333, #444, #333);
+    background: white;
+    border: 1px solid #ddd;
     border-radius: 10px;
     margin-bottom: 1rem;
-    padding: 25px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     animation: pulse 1.5s infinite;
   }
   
   .skeleton-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 25px;
+    align-items: center;
+    margin-bottom: 15px;
   }
   
   .skeleton-text {
-    background-color: #555;
-    border-radius: 5px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    animation: pulse 1.5s infinite;
   }
-  
+
   .skeleton-link {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    margin: 15px 0;
+    padding: 4px 8px;
+    background: #f7fafc;
+    border-radius: 15px;
+    margin-bottom: 8px;
+    width: auto;
+    min-width: 150px;
   }
   
   .skeleton-icon {
-    width: 32px;
-    height: 32px;
-    background-color: #666;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
     border-radius: 50%;
-    margin-right: 20px;
+    margin-right: 10px;
+    flex-shrink: 0;
   }
   
   @keyframes pulse {
     0% {
-      background-position: -200px 0;
+      background-position: -200% 0;
     }
     100% {
-      background-position: 200px 0;
+      background-position: 200% 0;
     }
   }
   
@@ -439,24 +461,23 @@
     {#if showDetails}
     <div class="info-section">
       <p>
-        This app helps you keep track of the creators you love by consolidating their content across platforms like YouTube and Patreon.
+        This app helps you discover and track your favorite creators across different platforms and websites.
       </p>
       <p>
         <strong>Key Features:</strong>
       </p>
       <ul>
-        <li><strong>Search Creators Across Platforms</strong> – Enter a channel or influencer’s name to find their presence on multiple platforms.</li>
-        <li><strong>Import Subscriptions</strong> – Authorize YouTube to import all your subscriptions, making it easier to stay updated.</li>
-        <li><strong>Manual Addition</strong> – Add individual creators by URL or handle.</li>
-        <li><strong>Centralized Management</strong> – View all linked creators in one place, with direct links to their platforms.</li>
+        <li><strong>Import Your Subscriptions</strong> – Import all your YouTube subscriptions with one click or add channels manually.</li>
+        <li><strong>Cross-Platform Discovery</strong> – Find your creators' other platforms and websites (Patreon, Twitter, and more).</li>
+        <li><strong>Unlimited Search</strong> – Get unlimited search results within your subscriptions.</li>
       </ul>
       <p>
         <strong>How to Use:</strong>
       </p>
       <ol>
         <li>Use the search bar to look up influencers by name or platform.</li>
-        <li>Authorize YouTube for expanded search results.</li>
         <li>Click on creator cards to view links to their content across platforms.</li>
+        <li>Click the <strong>+</strong> button to import your subscriptions or add channels manually.</li>
       </ol>
     </div>
     {/if}
@@ -468,7 +489,7 @@
       type="text"
       bind:value={query}
       placeholder="Search for creators, channels, or platforms..."
-      oninput={() => fetchResults(1)}
+      oninput={handleSearch}
       aria-label="Search creators"
     />
   </div>
@@ -478,15 +499,19 @@
 <div class="results" aria-live="polite" aria-busy="true">
   {#each Array(2) as _, i}
     <div class="creator-card skeleton">
-      <div class="creator-header skeleton-header">
-        <div class="skeleton-text" style="width: 75%; height: 24px;"></div>
-        <div class="skeleton-text" style="width: 10%; height: 24px;"></div>
+      <div class="skeleton-header">
+        <div class="skeleton-text" style="width: 60%; height: 24px;"></div>
+        <div class="skeleton-text" style="width: 80px; height: 24px;"></div>
       </div>
+      <div class="skeleton-text" style="width: 90%; height: 16px; margin-bottom: 8px;"></div>
+      <div class="skeleton-text" style="width: 75%; height: 16px; margin-bottom: 15px;"></div>
       <ul>
-        {#each Array(3) as __, j}
-          <li class="skeleton-link">
-            <div class="skeleton-icon"></div>
-            <div class="skeleton-text" style="width: 85%; height: 18px;"></div>
+        {#each Array(3) as _}
+          <li>
+            <div class="platform-link skeleton-link">
+              <div class="skeleton-icon"></div>
+              <div class="skeleton-text" style="width: 120px; height: 16px;"></div>
+            </div>
           </li>
         {/each}
       </ul>
@@ -523,6 +548,12 @@
       </div>
     {/each}
 
+    <!-- Nudge Section -->
+    {#if unauthorized}
+    <div class="nudge">
+      <p>Limited results. <button onclick={() => showModal = true}>Authorize</button> for more.</p>
+    </div>
+    {:else}
     <!-- Pagination Section -->
     <nav class="pagination" aria-label="Search results pagination">
       <button 
@@ -541,10 +572,7 @@
         Next
       </button>
     </nav>
-  </div>
-{:else if unauthorized}
-  <div class="nudge">
-    <p>Limited results. <button onclick={() => showModal = true}>Authorize</button> for more.</p>
+    {/if}
   </div>
 {:else if error}
   <p style="color: red;">{error}</p>
@@ -557,9 +585,9 @@
   <div class="suggested">
     <h3>Suggested Searches</h3>
     <ul>
+      <li><button onclick={() => updateQuery('Patreon')}>Patreon Links of everyone</button></li>
+      <li><button onclick={() => updateQuery('Game')}>Gaming Creators</button></li>
       <li><button onclick={() => updateQuery('Linus')}>Linus Tech Tips</button></li>
-      <li><button onclick={() => updateQuery('Game')}>Games</button></li>
-      <li><button onclick={() => updateQuery('Patreon')}>Patreon links</button></li>
     </ul>
   </div>
 {/if}

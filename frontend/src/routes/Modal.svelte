@@ -1,7 +1,8 @@
 <script lang="ts">
   let { showModal = $bindable() } = $props();
-  let url = $state<string>('');
+  let channelUrl = $state<string>('');
   let error = $state<string>('');
+  let modalContent: HTMLDivElement;
 
   const clientId = '435034689740-dqkt9rq57tf9e0a0i7j9c0jq0gpnhv7q.apps.googleusercontent.com';
   const redirectUri = window.location.origin + '/callback';
@@ -25,7 +26,7 @@
   }
 
   async function addChannel(): Promise<void> {
-    if (!url.trim()) {
+    if (!channelUrl.trim()) {
       error = 'Please enter a valid URL.';
       return;
     }
@@ -34,13 +35,13 @@
       const res = await fetch('/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handle: url })
+        body: JSON.stringify({ handle: channelUrl })
       });
 
       const data: AddChannelResponse = await res.json();
       if (res.ok) {
-        alert('Channel added successfully!');
-        url = '';
+        alert('Channel sent for processing!');
+        channelUrl = '';
         showModal = false;
         error = '';
       } else {
@@ -58,9 +59,16 @@
     }
   }
 
+  function handleOverlayClick(event: MouseEvent): void {
+    // Only close if clicking the overlay itself, not its children
+    if (event.target === event.currentTarget) {
+      closeModal();
+    }
+  }
+
   function closeModal(): void {
     error = '';
-    url = '';
+    channelUrl = '';
     showModal = false;
   }
 
@@ -74,86 +82,104 @@
 </script>
 
 <style>
-  .modal {
-    border: none;
-    background: transparent;
-    padding: 0;
-    margin: 0;
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    max-width: 100%;
-    max-height: 100%;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: flex-start; /* Changed from center to allow scrolling */
+    z-index: 1000;
+    padding: 2rem 1rem;
+    overflow-y: auto;
   }
 
-  .modal::backdrop {
-    background: rgba(0, 0, 0, 0.6);
-  }
-  
   .modal-content {
     background: white;
-    padding: 30px;
-    border-radius: 8px;
-    width: 90%;
+    padding: 2rem;
+    border-radius: 10px;
     max-width: 500px;
-    text-align: center;
+    width: 90%;
     position: relative;
-    color: #1a202c;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: auto;
   }
-  
-  .close-btn {
+
+  h2 {
+    margin: 0 0 1rem;
+    color: #1a202c;
+    font-size: 1.5rem;
+  }
+
+  .description {
+    margin-bottom: 1.5rem;
+    color: #4a5568;
+    line-height: 1.6;
+  }
+
+  .features {
+    margin: 1rem 0 1.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .features li {
+    margin-bottom: 0.75rem;
+    color: #4a5568;
+    line-height: 1.4;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .primary-button {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .secondary-button {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    background-color: transparent;
+    color: #4a5568;
+    border: 1px solid #cbd5e0;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .primary-button:hover {
+    background-color: #357abd;
+  }
+
+  .secondary-button:hover {
+    background-color: #f7fafc;
+  }
+
+  .close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
     background: none;
     border: none;
     font-size: 1.5rem;
-    position: absolute;
-    top: 15px;
-    right: 15px;
+    color: #718096;
     cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    color: #4a5568;
-  }
-
-  .close-btn:hover {
-    background-color: #edf2f7;
-  }
-
-  .close-btn:focus {
-    outline: 2px solid #2c5282;
-    outline-offset: 2px;
-  }
-  
-  .action-btn {
-    width: 100%;
-    margin-top: 20px;
-    padding: 12px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  .action-btn:hover {
-    opacity: 0.9;
-  }
-
-  .action-btn:focus {
-    outline: 2px solid #2c5282;
-    outline-offset: 2px;
-  }
-  
-  .authorize-btn {
-    background-color: #2c5282;
-    color: white;
-  }
-  
-  .manual-btn {
-    background-color: #e2e8f0;
-    color: #1a202c;
+    padding: 0.5rem;
+    line-height: 1;
   }
 
   .input-field {
@@ -178,107 +204,190 @@
     font-weight: 500;
   }
 
-  .modal-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
+  .section-divider {
+    margin: 2rem 0;
+    border-top: 1px solid #e2e8f0;
+    position: relative;
   }
 
-  .backdrop-button {
+  .section-divider span {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 0 1rem;
+    color: #718096;
+    font-size: 0.875rem;
+  }
+
+  .platform-button {
     width: 100%;
-    height: 100%;
-    background: transparent;
-    border: none;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 5px;
+    font-size: 1rem;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: all 0.2s;
   }
 
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
+  .platform-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
-  @media (max-width: 600px) {
-    .modal-content {
-      width: 95%;
-      padding: 20px;
+  .youtube-button {
+    background-color: #ff0000;
+    color: white;
+    border: none;
+  }
+
+  .youtube-button:hover:not(:disabled) {
+    background-color: #cc0000;
+  }
+
+  .twitter-button {
+    background-color: #1da1f2;
+    color: white;
+    border: none;
+  }
+
+  .twitter-button:hover:not(:disabled) {
+    background-color: #1a91da;
+  }
+
+  .manual-section {
+    margin-top: 1rem;
+  }
+
+  .manual-section p {
+    font-size: 0.875rem;
+    color: #718096;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .modal-overlay {
+      padding: 1rem;
+      align-items: flex-start;
     }
-    
-    .input-field {
-      width: 95%;
+
+    .modal-content {
+      padding: 1.5rem;
+      margin: 0 auto;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+    }
+
+    .button-group {
+      flex-direction: column;
+    }
+
+    .primary-button, .secondary-button {
+      width: 100%;
     }
   }
 </style>
 
-<dialog
-  class="modal"
-  bind:this={dialogElement}
+<svelte:window onkeydown={handleKeydown}/>
+
+<!-- Use role="dialog" and aria-modal="true" for better screen reader support -->
+<div 
+  class="modal-overlay" 
+  role="presentation"
+  onclick={handleOverlayClick}
+  onkeydown={handleKeydown}
 >
-  <div class="modal-backdrop">
-    <button 
-      class="backdrop-button" 
-      onclick={closeModal}
-      onkeydown={handleKeydown}
-      aria-label="Close modal"
-    >
-      <span class="sr-only">Close modal</span>
-    </button>
-  </div>
-  
   <div 
-    class="modal-content"
+    class="modal-content" 
+    role="dialog" 
+    aria-labelledby="modal-title"
+    aria-modal="true"
+    bind:this={modalContent}
   >
     <button 
-      class="close-btn" 
+      type="button"
+      class="close-button" 
       onclick={closeModal}
+      onkeydown={handleKeydown}
       aria-label="Close modal"
     >
       ×
     </button>
     
-    <h2 id="modal-title">Expand Your Search</h2>
-    <p>Authorize YouTube to import all your subscriptions, or manually add channels by URL.</p>
-
-    <button 
-      class="action-btn authorize-btn" 
-      onclick={authorizeYouTube}
-      aria-label="Authorize with YouTube"
-    >
-      Authorize YouTube
-    </button>
-
-    <input
-      type="text"
-      class="input-field"
-      bind:value={url}
-      placeholder="Enter channel URL or handle"
-      aria-label="Channel URL or handle"
-      aria-invalid={!!error}
-      aria-describedby={error ? 'error-message' : undefined}
-    />
+    <h2 id="modal-title">Unlock Full Creator Search</h2>
     
-    <button 
-      class="action-btn manual-btn" 
-      onclick={addChannel}
-      aria-label="Add channel manually"
-    >
-      Add Channel
-    </button>
+    <p class="description">
+      Import your subscriptions from your favorite platforms and discover where else your favorite creators are creating content.
+    </p>
+
+    <ul class="features">
+      <li>Import all your subscriptions with one click</li>
+      <li>Find creators' other platforms and websites (Patreon, Twitter, and more)</li>
+      <li>Get unlimited search results within your subscriptions</li>
+    </ul>
+
+    <div class="button-group">
+      <button 
+        type="button"
+        class="platform-button youtube-button"
+        onclick={authorizeYouTube}
+        onkeydown={handleKeydown}
+        aria-label="Import YouTube subscriptions"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+        </svg>
+        Import YouTube Subscriptions
+      </button>
+      <button 
+        type="button"
+        class="platform-button twitter-button"
+        disabled
+        aria-label="Import Twitter subscriptions (Coming soon)"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+        </svg>
+        Import Twitter Follows (Coming Soon)
+      </button>
+    </div>
+
+    <div class="section-divider" role="separator">
+      <span>or</span>
+    </div>
+
+    <div class="manual-section">
+      <p>
+        Don't want to import? You can manually add creators one at a time:
+      </p>
+      <input
+        type="text"
+        class="input-field"
+        bind:value={channelUrl}
+        placeholder="Enter YouTube channel URL or handle"
+        aria-label="YouTube channel URL or handle"
+        aria-invalid={!!error}
+        aria-describedby={error ? 'error-message' : undefined}
+      />
+      <button 
+        type="button"
+        class="secondary-button"
+        onclick={addChannel}
+        onkeydown={handleKeydown}
+        aria-label="Add channel manually"
+        style="margin-top: 0.5rem;"
+      >
+        Add Channel
+      </button>
+    </div>
 
     {#if error}
       <p id="error-message" class="error-message" role="alert">{error}</p>
     {/if}
   </div>
-</dialog>
+</div>

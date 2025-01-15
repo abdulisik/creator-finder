@@ -3,6 +3,7 @@
   import FloatingButton from './FloatingButton.svelte';
   import ProgressBanner from './ProgressBanner.svelte';
   import Modal from './Modal.svelte';
+  import { parseSubscribedLinks } from '@/lib/cookies';
 
   let progress = 0;
   let total = 0;
@@ -11,15 +12,7 @@
 
   // Check for authorization cookie
   onMount(() => {
-    const cookieValue = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('subscribed_links='))
-      ?.split('=')[1];
-
-    subscribedLinks = cookieValue
-      ? cookieValue.split(',').map(Number).filter((id) => Number.isInteger(id))
-      : [];
-
+    subscribedLinks = parseSubscribedLinks();
     unauthorized = subscribedLinks.length < 10;
   });
 

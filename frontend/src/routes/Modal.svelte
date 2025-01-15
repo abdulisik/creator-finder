@@ -103,7 +103,7 @@
     <input
       type="text"
       bind:value={url}
-      placeholder="Enter channel URL"
+      placeholder="Enter channel URL or handle"
       style="margin-top: 20px; width: 90%; padding: 8px;"
     />
     <button class="action-btn manual-btn" on:click={addChannel}>

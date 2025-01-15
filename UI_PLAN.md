@@ -72,14 +72,14 @@
   - Database has invalid links.
   - Speed up the decoupled subscription processing route. It is pretty fast when there are no new subscriptions.
   - Migrate to Svelte 5.
-  - Add dynamic text hints that change every few seconds (suggest popular searches).
   - Implement 300ms debounce on typing to prevent flooding requests.
   - Improve CTA modal with more explanations, clear and separated buttons.
   - Integrate /process-subscriptions route with the Progress Banner, make it parallel.
-  - Fix the cookie read on mount.
   - Scrolling is broken with search results.
   - Improve mobile view.
   - Add an option to remove a subscription, paginate MySubs.
+  - Modularize the files in the frontend folder.
+  - Add tests.
 
 ### **Commit Message:**
 

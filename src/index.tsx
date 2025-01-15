@@ -968,9 +968,25 @@ app.get('/search/:query', async (c) => {
     sql += ` ORDER BY creators.name LIMIT ? OFFSET ?`;
     bindings.push(pageSize, offset);
 
-    const results = await c.env.DB.prepare(sql)
+    let results = await c.env.DB.prepare(sql)
       .bind(...bindings)
       .all();
+
+    if (!results.results?.length && subscribedLinks.length) {
+      // Retry without a subscribed link filter
+      sql = `SELECT creators.name,
+                        links.platform,
+                        links.handle,
+                        links.link
+                FROM creators
+                LEFT JOIN links ON creators.id = links.creator_id
+                WHERE (creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?)` +
+        ` ORDER BY creators.name LIMIT ? OFFSET ?`;
+
+      results = await c.env.DB.prepare(sql)
+        .bind(`%${query}%`, `%${query}%`, `%${query}%`, pageSize, offset)
+        .all();
+    }
 
     if (!results.results?.length) {
       return c.json({ message }, 404);

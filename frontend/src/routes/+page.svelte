@@ -14,6 +14,14 @@
   onMount(() => {
     subscribedLinks = parseSubscribedLinks();
     unauthorized = subscribedLinks.length < 10;
+    // Check if this is the first visit
+    const hasVisited = localStorage.getItem('hasVisited');
+    if (!hasVisited) {
+      showDetails = true;
+      localStorage.setItem('hasVisited', 'true');
+    } else {
+      showDetails = false;
+    }
   });
 
   // Simulate post-authorization import progress
@@ -33,7 +41,7 @@
   let loading = false;
   let unauthorized = true;
   let error = null;
-  let showDetails = false;
+  let showDetails = true;
   let currentPage = 1;
   let hasNextPage = false;
 
@@ -127,27 +135,34 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 70vh;
-    text-align: center;
-    padding: 0 1rem;
+    padding: 2rem 1rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
   }
+  
   .headline {
     font-size: 2.5rem;
     font-weight: bold;
     margin-bottom: 10px;
+    text-align: center;
   }
+  
   .subtext {
     font-size: 1rem;
     color: #ccc;
     margin-bottom: 20px;
+    text-align: center;
   }
+  
   .info-section {
     margin-top: 10px;
     font-size: 0.9rem;
     text-align: left;
     color: #aaa;
   }
+  
   .toggle-btn {
     background: none;
     border: none;
@@ -157,43 +172,52 @@
     text-decoration: underline;
     padding: 5px;
   }
+  
   .toggle-btn:focus {
     outline: 2px solid #4a90e2;
   }
+  
   .search-bar {
-    max-width: 600px;
+    position: sticky;
+    top: 1rem;
     width: 100%;
+    max-width: 600px;
     padding: 12px;
     border: 1px solid #ddd;
     border-radius: 25px;
     font-size: 1rem;
     outline: none;
-    position: sticky;
-    top: 0;
     background: white;
     z-index: 50;
+    margin: 1rem 0;
   }
+  
   .search-bar:focus {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   }
+  
   .results {
+    width: 100%;
+    max-width: 800px;
+    margin: 1rem auto;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 100%;
-    margin-top: 40px;
-    text-align: left;
+    gap: 1rem;
   }
+  
   .creator-card {
-    margin-bottom: 30px;
+    width: 100%;
+    margin-bottom: 1rem;
     padding: 15px;
     background-color: #1e1e1e;
     border-radius: 10px;
   }
+  
   .pagination {
     text-align: center;
     margin: 20px 0;
   }
+  
   .pagination button {
     margin: 0 10px;
     padding: 10px 15px;
@@ -203,74 +227,38 @@
     border-radius: 5px;
     cursor: pointer;
   }
+  
   .pagination button:disabled {
     background-color: #555;
     cursor: not-allowed;
   }
-  .search-bar {
-    max-width: 600px;
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 25px;
-    font-size: 1rem;
-    outline: none;
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 50;
-  }
-  .spacer {
-    height: 120px;
-  }
-  .creator-header {
-    font-weight: bold;
-    font-size: 1.3rem;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    cursor: pointer;
-  }
-  .platform-link {
-    display: flex;
-    align-items: center;
-    margin: 8px 0;
-  }
-  .platform-link a {
-    margin-left: 10px;
-    color: #4a90e2;
-    text-decoration: none;
-  }
-  .platform-link a:hover {
-    text-decoration: underline;
-  }
+  
   .skeleton {
-    width: 65%;
-    max-width: 800px;
+    width: 100%;
     background: linear-gradient(90deg, #333, #444, #333);
     border-radius: 10px;
-    margin-bottom: 25px;
+    margin-bottom: 1rem;
     padding: 25px;
     animation: pulse 1.5s infinite;
   }
-
+  
   .skeleton-header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 25px;
   }
-
+  
   .skeleton-text {
     background-color: #555;
     border-radius: 5px;
   }
-
+  
   .skeleton-link {
     display: flex;
     align-items: center;
     margin: 15px 0;
   }
-
+  
   .skeleton-icon {
     width: 32px;
     height: 32px;
@@ -278,7 +266,7 @@
     border-radius: 50%;
     margin-right: 20px;
   }
-
+  
   @keyframes pulse {
     0% {
       background-position: -200px 0;
@@ -287,21 +275,26 @@
       background-position: 200px 0;
     }
   }
+  
   ul {
     list-style: none;
     padding: 0;
   }
+  
   li {
     margin-bottom: 10px;
   }
+  
   .creator-name {
     font-weight: bold;
   }
+  
   .nudge {
     text-align: center;
     margin: 15px 0;
     color: #aaa;
   }
+  
   .nudge a {
     color: #4a90e2;
     text-decoration: underline;
@@ -316,9 +309,6 @@
     .floating-cta {
       bottom: 15px;
       right: 15px;
-    }
-    .hero {
-      height: 50vh;
     }
   }
 </style>
@@ -360,8 +350,6 @@
     </div>
     {/if}
   </div>
-
-  <div class="spacer"></div>
 
   <input
     class="search-bar"

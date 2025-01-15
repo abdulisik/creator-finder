@@ -64,7 +64,7 @@ app.use(
 
 const NavBar = () => html`
   <nav>
-    <a href="/">Home</a> | <a href="/subscriptions">Subscriptions</a> |
+    <a href="/">Home</a> | <a href="/MySubs">Subscriptions</a> |
     <a href="/terms.txt">Terms</a> | <a href="/faq.txt">FAQ</a>
   </nav>
   <style>
@@ -343,9 +343,7 @@ const SubscriptionProcessingView = ({ titles, nextPageToken }) => html`
         <p>
           (Another) ${titles?.length ?? '0'} channels have just been processed:
         </p>
-        <ul>
-          ${titles?.map((title) => html`<li>${title}</li>`)}
-        </ul>
+        <p>${titles?.join(', ')}</p>
       </div>
     </body>
   </html>
@@ -445,7 +443,7 @@ app.get('/process-subscriptions', async (c) => {
       );
     } else {
       // All pages processed, redirect to My Subscriptions page
-      return c.redirect('/subscriptions');
+      return c.redirect('/MySubs');
     }
   } catch (error) {
     console.error('Error processing subscriptions:', error);

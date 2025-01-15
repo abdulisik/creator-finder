@@ -134,12 +134,15 @@
   nav {
     text-align: center;
     margin: 20px 0;
+    padding: 0 20px;
   }
   nav a {
     margin: 0 10px;
     text-decoration: none;
     color: #2c5282;
     padding: 5px;
+    display: inline-block;
+    word-break: break-word;
   }
   nav a:hover {
     text-decoration: underline;
@@ -159,21 +162,28 @@
     max-width: 1200px;
     margin: 0 auto;
     position: relative;
+    box-sizing: border-box;
   }
   
   .headline {
-    font-size: 2.5rem;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
     font-weight: bold;
     margin-bottom: 10px;
     text-align: center;
     color: #1a202c;
+    padding: 0 10px;
+    width: 100%;
+    word-wrap: break-word;
   }
   
   .subtext {
-    font-size: 1rem;
+    font-size: clamp(0.875rem, 3vw, 1rem);
     color: #4a5568;
     margin-bottom: 20px;
     text-align: center;
+    padding: 0 10px;
+    width: 100%;
+    word-wrap: break-word;
   }
   
   .info-section {
@@ -181,6 +191,10 @@
     font-size: 0.9rem;
     text-align: left;
     color: #4a5568;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
   }
   
   .toggle-btn {
@@ -191,6 +205,8 @@
     cursor: pointer;
     text-decoration: underline;
     padding: 5px;
+    white-space: normal;
+    word-wrap: break-word;
   }
   
   .toggle-btn:focus {
@@ -199,6 +215,15 @@
     border-radius: 2px;
   }
   
+  .search-section {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
   .search-bar {
     position: sticky;
     top: 1rem;
@@ -212,13 +237,14 @@
     background: white;
     z-index: 50;
     margin: 1rem 0;
+    box-sizing: border-box;
   }
   
   .search-bar:focus {
     border-color: #2c5282;
     box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.2);
   }
-  
+
   .results {
     width: 100%;
     max-width: 800px;
@@ -226,19 +252,27 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    padding: 0 20px;
+    box-sizing: border-box;
   }
   
   .creator-card {
     width: 100%;
     margin-bottom: 1rem;
     padding: 15px;
-    background-color: #1e1e1e;
+    border: 1px solid #ddd;
     border-radius: 10px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   
   .pagination {
     text-align: center;
-    margin: 20px 0;
+    margin: 20px 0 80px;
+    padding-bottom: 20px;
   }
   
   .pagination button {
@@ -249,6 +283,8 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
   }
   
   .pagination button:disabled {
@@ -306,12 +342,15 @@
   
   li {
     margin-bottom: 10px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   
   .nudge {
     text-align: center;
     margin: 15px 0;
     color: #aaa;
+    padding: 0 20px;
   }
   
   .nudge button {
@@ -320,7 +359,9 @@
     cursor: pointer;
     background: none;
     border: none;
-    padding: 0;
+    padding: 5px;
+    word-wrap: break-word;
+    white-space: normal;
   }
   
   .suggested button {
@@ -329,19 +370,49 @@
     cursor: pointer;
     background: none;
     border: none;
-    padding: 0;
+    padding: 5px;
+    word-wrap: break-word;
+    white-space: normal;
   }
 
-  /* Mobile Adjustments */
-  @media (max-width: 600px) {
+  @media (max-width: 640px) {
+    .hero {
+      padding: 1rem;
+    }
+
+    .search-section {
+      margin-bottom: 1rem;
+    }
+
     .search-bar {
+      margin: 0.5rem 20px;
+      width: calc(100% - 40px);
       font-size: 0.9rem;
     }
-    .creator-card {
-      padding: 10px;
+
+    .results {
+      padding: 0 10px;
     }
+
+    .creator-card {
+      padding: 12px;
+    }
+
     .headline {
       font-size: 2rem;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+
+    .nudge, .suggested {
+      padding: 0 10px;
+    }
+
+    li {
+      padding-right: 10px;
     }
   }
 </style>
@@ -391,14 +462,16 @@
     {/if}
   </div>
 
-  <input
-    class="search-bar"
-    type="text"
-    bind:value={query}
-    placeholder="Search for creators, channels, or platforms..."
-    oninput={() => fetchResults(1)}
-    aria-label="Search creators"
-  />
+  <div class="search-section">
+    <input
+      class="search-bar"
+      type="text"
+      bind:value={query}
+      placeholder="Search for creators, channels, or platforms..."
+      oninput={() => fetchResults(1)}
+      aria-label="Search creators"
+    />
+  </div>
 
 <!-- Skeleton Loader During Fetch -->
 {#if loading}

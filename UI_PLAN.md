@@ -4,7 +4,6 @@ Goal: Refine UX, ensure responsiveness, and improve performance.
 
 ## Tasks:
 
-  - Test search, results, and authorization modals on mobile.
   - Add proper meta descriptions and OpenGraph tags.
   - Refactor hono routes to internal functions.
   - Clean up old code, including tsconfig.json and package.json. (i.e., JSX)

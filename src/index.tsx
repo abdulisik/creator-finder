@@ -36,6 +36,10 @@ app.all('/', async (c) => {
   return await handle.fetch(c.req.raw, c.env, c.executionCtx);
 });
 
+app.all('/MySubs', async (c) => {
+  return await handle.fetch(c.req.raw, c.env, c.executionCtx);
+});
+
 app.use(async (c: Context, next) => {
   cors({
     origin: c.env.ORIGIN,
@@ -1024,9 +1028,7 @@ app.get('/subscriptions', async (c) => {
       .filter((id) => Number.isInteger(id) && id >= 0) || [];
 
   if (subscribedLinks.length === 0) {
-    return c.html(
-      <ListView creators={[]} message='You have no subscriptions yet.' />
-    );
+    return c.json([]);
   }
 
   const results = await c.env.DB.prepare(
@@ -1042,9 +1044,7 @@ app.get('/subscriptions', async (c) => {
 
   if (!results.results?.length) {
     console.error('No results found for subscribed links');
-    return c.html(
-      <ListView creators={[]} message='You have no subscriptions yet.' />
-    );
+    return c.json([]);
   }
 
   // Group links by creator's name
@@ -1060,10 +1060,5 @@ app.get('/subscriptions', async (c) => {
     return acc;
   }, {});
 
-  return c.html(
-    <ListView
-      creators={Object.values(creators)}
-      message='Subscribed Creators'
-    />
-  );
+  return c.json(creators);
 });

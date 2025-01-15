@@ -123,6 +123,7 @@
       instagram: '📸',
       facebook: '📘',
       ko_fi: '☕',
+      tiktok: '📹',
     };
     return icons[platform.toLowerCase()] || '🔗';
   }

@@ -1,33 +1,5 @@
 # **Milestone-Based Development Plan for UI Revamp**
 
-## **Milestone 4: Subscriptions Management Page**
-
-**Goal:** Create a dashboard for managing YouTube subscriptions.
-
-### **Tasks:**
-
-- **4.1 – Build Subscriptions Page (`/subscriptions`)**
-
-  - Fetch and list subscriptions via `/subscriptions` route.
-  - Display as **grid or list** with filter options.
-
-- **4.2 – Add Filtering Options**
-
-  - **Filter by platform** (YouTube, Patreon).
-
-- **4.3 – Manage Subscription Actions**
-
-  - “Remove” or “Refresh” individual subscriptions.
-  - Expandable card for viewing links associated with each creator.
-
-- **4.4 – Pagination (if required)**
-
-### **Commit Message:**
-
-`feat: Build subscriptions page with filters and actions`
-
----
-
 ## **Milestone 5: Manual Creator Addition (Floating CTA Expansion)**
 
 **Goal:** Allow users to manually add creators by URL.
@@ -89,7 +61,7 @@
   - Lazy load images and results.
 - **7.4 – Accessibility Improvements**
   - Add ARIA labels and ensure proper keyboard navigation.
-- **7.5 – Clean up**
+- **7.5 – Clean up and Stretch Tasks**
   - Clean up warnings, lints and errors.
   - Refactor hono routes to internal functions.
   - Clean up old code, including tsconfig.json and package.json. (i.e., JSX)
@@ -107,6 +79,7 @@
   - Fix the cookie read on mount.
   - Scrolling is broken with search results.
   - Improve mobile view.
+  - Add an option to remove a subscription, paginate MySubs.
 
 ### **Commit Message:**
 

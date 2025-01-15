@@ -1,6 +1,12 @@
 <script>
-  export let progress = 0;
-  export let total = 0;
+  /**
+   * @typedef {Object} Props
+   * @property {number} [progress]
+   * @property {number} [total]
+   */
+
+  /** @type {Props} */
+  let { progress = 0, total = 0 } = $props();
 </script>
 
 <style>

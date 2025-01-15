@@ -1,14 +1,16 @@
 <script>
+  import { run } from 'svelte/legacy';
+
   import { onMount } from 'svelte';
   import FloatingButton from './FloatingButton.svelte';
   import ProgressBanner from './ProgressBanner.svelte';
   import Modal from './Modal.svelte';
   import { parseSubscribedLinks } from '@/lib/cookies';
 
-  let progress = 0;
-  let total = 0;
+  let progress = $state(0);
+  let total = $state(0);
   let subscribedLinks = [];
-  let showModal = false;
+  let showModal = $state(false);
 
   // Check for authorization cookie
   onMount(() => {
@@ -36,21 +38,15 @@
     }, 1000);
   }
   
-  let query = '';
-  let results = [];
-  let loading = false;
-  let unauthorized = true;
-  let error = null;
-  let showDetails = true;
-  let currentPage = 1;
-  let hasNextPage = false;
+  let query = $state('');
+  let results = $state([]);
+  let loading = $state(false);
+  let unauthorized = $state(true);
+  let error = $state(null);
+  let showDetails = $state(true);
+  let currentPage = $state(1);
+  let hasNextPage = $state(false);
 
-  // Reactive fetch triggered by query changes
-  $: if (query.length > 0) {
-    fetchResults();
-  } else {
-    results = [];
-  }
 
   async function fetchResults(page = 1) {
     if (query.length === 0) {
@@ -128,6 +124,14 @@
     };
     return icons[platform.toLowerCase()] || '🔗';
   }
+  // Reactive fetch triggered by query changes
+  run(() => {
+    if (query.length > 0) {
+      fetchResults();
+    } else {
+      results = [];
+    }
+  });
 </script>
 
 <style>
@@ -337,7 +341,7 @@
     Discover creators you already follow and track them across the web.
     <button 
       class="toggle-btn"
-      on:click={() => showDetails = !showDetails}
+      onclick={() => showDetails = !showDetails}
       aria-expanded={showDetails}
     >
       {showDetails ? 'Show Less ▲' : 'Learn More ▼'}
@@ -373,7 +377,7 @@
     type="text"
     bind:value={query}
     placeholder="Search for creators, channels, or platforms..."
-    on:input={() => fetchResults(1)}
+    oninput={() => fetchResults(1)}
   />
 
 <!-- Skeleton Loader During Fetch -->
@@ -402,7 +406,7 @@
   <div class="results">
     {#each results as creator, i}
       <div class="creator-card">
-        <div class="creator-header" on:click={() => toggleExpand(i)}>
+        <div class="creator-header" onclick={() => toggleExpand(i)}>
           <span>{creator.name}</span>
           <span>{creator.expanded ? '▼' : '▲'}</span>
         </div>
@@ -423,18 +427,18 @@
 
     <!-- Pagination Section -->
     <div class="pagination">
-      <button on:click={() => changePage(-1)} disabled={currentPage <= 1}>
+      <button onclick={() => changePage(-1)} disabled={currentPage <= 1}>
         Previous
       </button>
       <span>Page {currentPage}</span>
-      <button on:click={() => changePage(1)} disabled={!hasNextPage}>
+      <button onclick={() => changePage(1)} disabled={!hasNextPage}>
         Next
       </button>
     </div>
   </div>
 {:else if unauthorized}
   <div class="nudge">
-    <p>Limited results. <a on:click={() => showModal = true}>Authorize</a> for more.</p>
+    <p>Limited results. <a onclick={() => showModal = true}>Authorize</a> for more.</p>
   </div>
 {:else if error}
   <p style="color: red;">{error}</p>
@@ -447,8 +451,8 @@
   <div class="suggested">
     <h3>Suggested Creators</h3>
     <ul>
-      <li><a on:click={() => updateQuery('Linus')}>Linus Tech Tips</a></li>
-      <li><a on:click={() => updateQuery('Game')}>Games</a></li>
+      <li><a onclick={() => updateQuery('Linus')}>Linus Tech Tips</a></li>
+      <li><a onclick={() => updateQuery('Game')}>Games</a></li>
     </ul>
   </div>
 {/if}

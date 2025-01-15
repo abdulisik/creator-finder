@@ -1,6 +1,6 @@
 <script>
   import Modal from './Modal.svelte';
-  let showModal = false;
+  let showModal = $state(false);
 </script>
 
 <style>
@@ -23,7 +23,7 @@
   }
 </style>
 
-<button class="floating-cta" on:click={() => showModal = true}>
+<button class="floating-cta" onclick={() => showModal = true}>
   Find More Creators
 </button>
 

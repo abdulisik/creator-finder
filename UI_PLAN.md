@@ -14,7 +14,6 @@ Goal: Refine UX, ensure responsiveness, and improve performance.
   - Eliminate static files.
   - Database has invalid links.
   - Speed up the decoupled subscription processing route. It is pretty fast when there are no new subscriptions.
-  - Migrate to Svelte 5.
   - Implement 300ms debounce on typing to prevent flooding requests.
   - Improve CTA modal with more explanations, clear and separated buttons.
   - Integrate /process-subscriptions route with the Progress Banner, make it parallel.

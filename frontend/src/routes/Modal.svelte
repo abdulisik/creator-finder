@@ -1,7 +1,7 @@
 <script>
-  export let showModal;
-  let url = '';
-  let error = null;
+  let { showModal = $bindable() } = $props();
+  let url = $state('');
+  let error = $state(null);
 
   const clientId = '435034689740-dqkt9rq57tf9e0a0i7j9c0jq0gpnhv7q.apps.googleusercontent.com';
   const redirectUri = window.location.origin + '/callback';
@@ -90,13 +90,13 @@
   }
 </style>
 
-<div class="modal" on:click={() => showModal = false}>
-  <div class="modal-content" on:click={e => e.stopPropagation()}>
-    <button class="close-btn" on:click={() => showModal = false}>×</button>
+<div class="modal" onclick={() => showModal = false}>
+  <div class="modal-content" onclick={e => e.stopPropagation()}>
+    <button class="close-btn" onclick={() => showModal = false}>×</button>
     <h2>Expand Your Search</h2>
     <p>Authorize YouTube to import all your subscriptions, or manually add channels by URL.</p>
 
-    <button class="action-btn authorize-btn" on:click={authorizeYouTube}>
+    <button class="action-btn authorize-btn" onclick={authorizeYouTube}>
       Authorize YouTube
     </button>
 
@@ -106,7 +106,7 @@
       placeholder="Enter channel URL or handle"
       style="margin-top: 20px; width: 90%; padding: 8px;"
     />
-    <button class="action-btn manual-btn" on:click={addChannel}>
+    <button class="action-btn manual-btn" onclick={addChannel}>
       Add Channel
     </button>
 

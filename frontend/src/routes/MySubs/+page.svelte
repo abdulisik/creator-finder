@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte';
-  let subscriptions = [];
-  let loading = false;
-  let error = null;
+  let subscriptions = $state([]);
+  let loading = $state(false);
+  let error = $state(null);
 
   async function fetchSubscriptions() {
     loading = true;
@@ -42,15 +42,15 @@
     return icons[platform.toLowerCase()] || '🔗';
   }
 
-  let platformFilter = ''; // Default: show all
+  let platformFilter = $state(''); // Default: show all
 
-  $: filteredSubscriptions = subscriptions.filter(
+  let filteredSubscriptions = $derived(subscriptions.filter(
     (subscription) =>
       !platformFilter ||
       subscription.links.some(
         (link) => link.platform.toLowerCase() === platformFilter
       )
-  );
+  ));
 </script>
 
 <style>

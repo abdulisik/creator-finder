@@ -52,6 +52,7 @@ MVP complete with YouTube integration, including:
 
 - In-app feedback system and feature changelog
 - Cross-platform creator recommendations
+- Dynamic subscription import progress tracking on home page
 
 ### Value-Add Features
 

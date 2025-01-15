@@ -131,6 +131,18 @@
 </script>
 
 <style>
+  nav {
+    text-align: center;
+    margin: 20px 0;
+  }
+  nav a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: #333;
+  }
+  nav a:hover {
+    text-decoration: underline;
+  }
   .hero {
     display: flex;
     flex-direction: column;
@@ -313,6 +325,11 @@
   }
 </style>
 
+<nav>
+  <a href="/">Home</a> | <a href="/MySubs">Subscriptions</a> |
+  <a href="/terms.txt">Terms</a> | <a href="/faq.txt">FAQ</a>
+</nav>
+
 <!-- Hero Section -->
 <div class="hero">
   <div class="headline">Find Your Favorite Creators Across Platforms</div>
@@ -422,7 +439,11 @@
 {:else if error}
   <p style="color: red;">{error}</p>
 {:else}
-  <p>No results found. Try another search.</p>
+  {#if !query}
+    <p>Search for creators, channels, or platforms.</p>
+  {:else}
+    <p>No results found. Try another search.</p>
+  {/if}
   <div class="suggested">
     <h3>Suggested Creators</h3>
     <ul>

@@ -18,17 +18,23 @@
 
 <style>
   .search-section {
-    position: relative;
+    position: sticky;
+    top: 0;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .search-section.sticky {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .search-bar {
-    position: sticky;
-    top: 1rem;
     width: 100%;
     max-width: 600px;
     padding: 12px;
@@ -50,6 +56,7 @@
   @media (max-width: 640px) {
     .search-section {
       margin-bottom: 1rem;
+      padding: 0.5rem 0;
     }
 
     .search-bar {
@@ -60,7 +67,22 @@
   }
 </style>
 
-<div class="search-section">
+<script lang="ts" context="module">
+  let isSticky = false;
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('scroll', () => {
+      const scrollPosition = window.scrollY;
+      isSticky = scrollPosition > 0;
+      const searchSection = document.querySelector('.search-section');
+      if (searchSection) {
+        searchSection.classList.toggle('sticky', isSticky);
+      }
+    });
+  }
+</script>
+
+<div class="search-section" class:sticky={isSticky}>
   <input
     class="search-bar"
     type="text"

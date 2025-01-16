@@ -32,12 +32,14 @@
   }
 
   async function changePage(delta: number): Promise<void> {
-    const newPage = $searchStore.currentPage + delta;
+    searchStore.setLoading(true);
+      const newPage = $searchStore.currentPage + delta;
     searchStore.setPage(newPage);
     await fetchResults($searchStore.query, newPage);
   }
 
   async function handleSuggestedSearch(query: string): Promise<void> {
+    searchStore.setLoading(true);
     searchStore.setQuery(query);
     await fetchResults(query, 1);
   }

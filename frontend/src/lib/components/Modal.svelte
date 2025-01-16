@@ -137,18 +137,6 @@
     margin-top: 2rem;
   }
 
-  .primary-button {
-    flex: 1;
-    padding: 0.75rem 1.5rem;
-    background-color: #4a90e2;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
   .secondary-button {
     flex: 1;
     padding: 0.75rem 1.5rem;
@@ -159,10 +147,6 @@
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.2s;
-  }
-
-  .primary-button:hover {
-    background-color: #357abd;
   }
 
   .secondary-button:hover {
@@ -287,7 +271,7 @@
       flex-direction: column;
     }
 
-    .primary-button, .secondary-button {
+    .secondary-button {
       width: 100%;
     }
   }

@@ -31,11 +31,6 @@ type AppType = {
 
 const app = new Hono<AppType>();
 
-// Route all frontend traffic to SvelteKit handler
-app.all('/', async (c) => {
-  return await handle.fetch(c.req.raw, c.env, c.executionCtx);
-});
-
 app.use(async (c: Context, next) => {
   cors({
     origin: c.env.ORIGIN,
@@ -58,250 +53,14 @@ app.use(
   })
 );
 
-const NavBar = () => html`
-  <nav>
-    <a href="/">Home</a> | <a href="/subscriptions">Subscriptions</a> |
-    <a href="/terms.txt">Terms</a> | <a href="/faq.txt">FAQ</a>
-  </nav>
-  <style>
-    nav {
-      text-align: center;
-      margin: 20px 0;
-    }
-    nav a {
-      margin: 0 10px;
-      text-decoration: none;
-      color: #333;
-    }
-    nav a:hover {
-      text-decoration: underline;
-    }
-  </style>
-`;
+// Route all frontend traffic to SvelteKit handler
+app.all('/', async (c) => {
+  return await handle.fetch(c.req.raw, c.env, c.executionCtx);
+});
 
-const HomeView = () => html`
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Creator Finder</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          background-color: #f4f4f9;
-          color: #333;
-          margin: 20px;
-          padding: 0;
-        }
-
-        h1,
-        h2,
-        p {
-          color: #333;
-        }
-
-        /* Navbar */
-        nav {
-          text-align: center;
-          margin: 20px 0;
-        }
-
-        nav a {
-          color: #333;
-          text-decoration: none;
-          margin-right: 15px;
-          font-weight: bold;
-        }
-
-        nav a:hover {
-          color: #0073e6;
-          text-decoration: underline;
-        }
-
-        /* Input fields */
-        input[type='text'],
-        input[type='checkbox'] {
-          width: 75%;
-          padding: 10px;
-          margin: 10px 0;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.1);
-          transition: all 0.2s ease-in-out;
-        }
-
-        input[type='text']:focus {
-          border-color: #0073e6;
-          box-shadow: inset 1px 1px 6px rgba(0, 0, 0, 0.15);
-          outline: none;
-        }
-
-        /* Buttons */
-        button {
-          padding: 10px 15px;
-          background-color: #0073e6;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
-          transition: background-color 0.2s ease-in-out,
-            box-shadow 0.2s ease-in-out;
-        }
-
-        button:hover {
-          background-color: #005bb5;
-          box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Lists and Links */
-        ul {
-          list-style: none;
-          padding: 0;
-        }
-
-        li {
-          background-color: #ffffff;
-          margin: 5px 0;
-          padding: 5px;
-          border-radius: 8px;
-          box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
-          transition: box-shadow 0.2s ease-in-out;
-        }
-
-        li:hover {
-          box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        a {
-          color: #0073e6;
-          text-decoration: none;
-        }
-
-        a:hover {
-          text-decoration: underline;
-        }
-
-        /* Spinner for Loading */
-        .spinner {
-          width: 50px;
-          height: 50px;
-          border: 5px solid #ddd;
-          border-top-color: #0073e6;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 20px auto;
-        }
-
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        .description {
-          margin-bottom: 20px;
-        }
-        /* Align checkbox and label */
-        .input-section {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        input[type='checkbox'] {
-          margin-right: 5px;
-          transform: scale(1.2); /* Make checkbox slightly larger */
-        }
-      </style>
-      <script src="/home.js" defer></script>
-    </head>
-    <body>
-      ${NavBar()}
-      <h1>Welcome to Creator Finder</h1>
-
-      <p class="description">
-        Creator Finder helps you discover and organize creators, links, and
-        social platforms like YouTube and Patreon. <br />
-        Use the search bar to find creators or add new ones manually. You can
-        also import your YouTube subscriptions for a seamless experience. <br />
-        <strong>Note:</strong> Search function only searches for the subscribed
-        creators once you add any. Clear the site data, or go incognito to
-        search from all known creators. By using this site, you agree to relevant <a href="/terms.txt">privacy policies</a>.
-      </p>
-
-      <p class="youtube-auth-description">
-        To import your subscriptions automatically, click:
-        <button id="authorizeButton">Authorize YouTube Access</button>
-      </p>
-
-      <!-- Add Creator Section -->
-      <div class="input-section">
-        <form id="addCreatorForm">
-          <label for="addCreatorInput"
-            ><strong>Add a New Creator by Handle or URL:</strong></label
-          >
-          <div
-            style="display: flex; align-items: center; gap: 10px; margin-top: 5px;"
-          >
-            <input
-              type="text"
-              id="addCreatorInput"
-              placeholder="Enter YouTube handle or URL..."
-            />
-            <button type="submit">Add Creator</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Search Section -->
-      <div class="input-section" style="margin-top: 20px;">
-        <label for="searchInput"
-          ><strong>Search for Creators, Links, and Platforms:</strong></label
-        >
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Search for creators..."
-        />
-      </div>
-
-      <!-- Results Section -->
-      <div id="resultsContainer"></div>
-
-      <!-- Pagination -->
-      <div
-        id="paginationContainer"
-        style="text-align: center; margin-top: 20px;"
-      >
-        <button id="prevPage" style="display: none;">Previous</button>
-        <button id="nextPage" style="display: none;">Next</button>
-      </div>
-    </body>
-  </html>
-`;
-
-// Route to Serve Home View
-app.get('/', (c) => c.html(<HomeView />));
-
-const ErrorView = ({ message }) => html`
-  <html lang="en">
-    <body style="text-align: center;">
-      <div class="error-container">
-        <h1>Processing Error</h1>
-        <p>${message}</p>
-        <p>
-          Please give us some time, then refresh this page to keep retrying from
-          where we left. If this keeps happening after a day, reach out and
-          include the page URL.
-        </p>
-        <a href="/" style="text-decoration: none; color: #721c24;"
-          >Back to Home</a
-        >
-      </div>
-    </body>
-  </html>
-`;
+app.all('/MySubs', async (c) => {
+  return await handle.fetch(c.req.raw, c.env, c.executionCtx);
+});
 
 const SubscriptionProcessingView = ({ titles, nextPageToken }) => html`
   <html lang="en">
@@ -339,9 +98,7 @@ const SubscriptionProcessingView = ({ titles, nextPageToken }) => html`
         <p>
           (Another) ${titles?.length ?? '0'} channels have just been processed:
         </p>
-        <ul>
-          ${titles?.map((title) => html`<li>${title}</li>`)}
-        </ul>
+        <p>${titles?.join(', ')}</p>
       </div>
     </body>
   </html>
@@ -426,7 +183,14 @@ app.get('/process-subscriptions', async (c) => {
 
     // If adding creators failed due to quota or another issue, display error
     if (!addResult.success) {
-      return c.html(<ErrorView message={addResult.error} />);
+      return c.json(
+        {
+          error: addResult.error,
+          message:
+            'Please give us some time, then refresh this page to keep retrying from where we left. If this keeps happening after a day, reach out and include the page URL.',
+        },
+        500
+      );
     }
 
     // Handle next page
@@ -441,12 +205,17 @@ app.get('/process-subscriptions', async (c) => {
       );
     } else {
       // All pages processed, redirect to My Subscriptions page
-      return c.redirect('/subscriptions');
+      return c.redirect('/MySubs');
     }
   } catch (error) {
     console.error('Error processing subscriptions:', error);
-    return c.html(
-      <ErrorView message='Failed to process subscriptions due to an unexpected error.' />
+    return c.json(
+      {
+        error: 'Failed to process subscriptions due to an unexpected error.',
+        message:
+          'Please give us some time, then refresh this page to keep retrying from where we left. If this keeps happening after a day, reach out and include the page URL.',
+      },
+      500
     );
   }
 });
@@ -966,9 +735,25 @@ app.get('/search/:query', async (c) => {
     sql += ` ORDER BY creators.name LIMIT ? OFFSET ?`;
     bindings.push(pageSize, offset);
 
-    const results = await c.env.DB.prepare(sql)
+    let results = await c.env.DB.prepare(sql)
       .bind(...bindings)
       .all();
+
+    if (!results.results?.length && subscribedLinks.length) {
+      // Retry without a subscribed link filter
+      sql = `SELECT creators.name,
+                        links.platform,
+                        links.handle,
+                        links.link
+                FROM creators
+                LEFT JOIN links ON creators.id = links.creator_id
+                WHERE (creators.name LIKE ? OR links.handle LIKE ? OR links.link LIKE ?)` +
+        ` ORDER BY creators.name LIMIT ? OFFSET ?`;
+
+      results = await c.env.DB.prepare(sql)
+        .bind(`%${query}%`, `%${query}%`, `%${query}%`, pageSize, offset)
+        .all();
+    }
 
     if (!results.results?.length) {
       return c.json({ message }, 404);
@@ -986,36 +771,6 @@ app.get('/search/:query', async (c) => {
   }
 });
 
-const ListView = ({ creators, message = 'All creators' }) => html`
-  <html>
-    <body>
-      ${NavBar()}
-      <h1>${message}</h1>
-      <ul>
-        ${creators.map(
-          (creator) => html`
-            <li>
-              <strong>${creator.name}</strong>
-              <ul>
-                ${creator.links.map(
-                  (link) => html`
-                    <li>
-                      <a href="${link.link}" target="_blank">
-                        ${link.platform}:
-                        ${link.handle ? link.handle : link.link}
-                      </a>
-                    </li>
-                  `
-                )}
-              </ul>
-            </li>
-          `
-        )}
-      </ul>
-    </body>
-  </html>
-`;
-
 app.get('/subscriptions', async (c) => {
   const subscribedLinks =
     getCookie(c, 'subscribed_links')
@@ -1024,9 +779,7 @@ app.get('/subscriptions', async (c) => {
       .filter((id) => Number.isInteger(id) && id >= 0) || [];
 
   if (subscribedLinks.length === 0) {
-    return c.html(
-      <ListView creators={[]} message='You have no subscriptions yet.' />
-    );
+    return c.json([]);
   }
 
   const results = await c.env.DB.prepare(
@@ -1042,9 +795,7 @@ app.get('/subscriptions', async (c) => {
 
   if (!results.results?.length) {
     console.error('No results found for subscribed links');
-    return c.html(
-      <ListView creators={[]} message='You have no subscriptions yet.' />
-    );
+    return c.json([]);
   }
 
   // Group links by creator's name
@@ -1060,10 +811,5 @@ app.get('/subscriptions', async (c) => {
     return acc;
   }, {});
 
-  return c.html(
-    <ListView
-      creators={Object.values(creators)}
-      message='Subscribed Creators'
-    />
-  );
+  return c.json(creators);
 });

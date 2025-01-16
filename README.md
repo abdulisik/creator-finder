@@ -8,7 +8,7 @@ Tired of manually hunting down your favorite YouTubers on Patreon? Creator Finde
 
 ## Overview
 
-Built with modern edge computing (Cloudflare Workers, D1, Hono), Creator Finder Database provides instantaneous, global access to creator platform data with zero infrastructure overhead. Starting with YouTube integration, the service:
+Built with modern edge computing (Cloudflare Workers, D1) with Hono backend and a responsive Svelte frontend, Creator Finder Database provides instantaneous, global access to creator platform data with zero infrastructure overhead. Starting with YouTube integration, the service:
 
 - Automatically imports YouTube subscriptions to jump start discovery
 - Maps creator presence across multiple platforms
@@ -52,6 +52,7 @@ MVP complete with YouTube integration, including:
 
 - In-app feedback system and feature changelog
 - Cross-platform creator recommendations
+- Dynamic subscription import progress tracking on home page
 
 ### Value-Add Features
 
@@ -68,7 +69,7 @@ Growth opportunities exist in the expanding creator economy, though platform API
 
 ## Tools and Tech Stack
 
-Frontend: Custom HTML and JavaScript, with potential future transition to a framework like Remix, React or Vue.js for enhanced interactivity and ease of development.
+Frontend: Svelte application, providing a responsive and interactive user interface.
 
 Backend: Hono, a fast and lightweight web framework optimized for Cloudflare, leveraging Cloudflare Workers to manage server-side functionality seamlessly.
 

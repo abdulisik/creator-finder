@@ -89,7 +89,7 @@
 <div class="hero" role="main">
   <div class="headline">Find Your Favorite Creators Across Platforms</div>
   <div class="subtext">
-    Discover creators you already follow and track them across the web.
+    Discover influencers/YouTubers/streamers/creators you already follow and track them across the web.
     <button 
       class="toggle-btn"
       onclick={() => showDetails = !showDetails}

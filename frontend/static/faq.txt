@@ -9,7 +9,7 @@ We only store public data (e.g., video descriptions and profile links). Subscrip
 
 3. How is my data protected?
 
-We don’t store personal data on our servers. Your subscription data and API authorization tokens are stored locally in your browser.
+We don't store personal data on our servers. Your subscription data and API authorization tokens are stored locally in your browser.
 
 4. What happens when I authorize with YouTube?
 
@@ -33,4 +33,8 @@ Yes! We appreciate feedback, donations, and sponsorships to help maintain and im
 
 9. How do you handle API usage limits?
 
-We use rate-limited external APIs (e.g., YouTube). If limits are exceeded, processing will pause, and you’ll be asked to retry later.
+We use rate-limited external APIs (e.g., YouTube). If limits are exceeded, processing will pause, and you'll be asked to retry later.
+
+10. Is this project open-source?
+
+Yes! Contributions are welcome. You can find the source code on GitHub: https://github.com/abdulisik/creator-finder

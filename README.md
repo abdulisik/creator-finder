@@ -50,7 +50,7 @@ MVP complete with YouTube integration, including:
 
 ### Community & UX
 
-- In-app feedback system and feature changelog
+- In-app feedback system and feature changelog, offline usage with PWA
 - Cross-platform creator recommendations
 - Dynamic subscription import progress tracking on home page
 
@@ -60,6 +60,16 @@ MVP complete with YouTube integration, including:
 - Platform engagement analytics
 - Data-driven insights for creator platform expansion
 - Timeline tracking for creator connections
+
+### Known Issues
+
+- Invalid links aren't being checked.
+- The chip links from YouTube descriptions aren't being read.
+- There is no option to manually remove a subscription from MySubs.
+- Subscription processing is too slow with new subscriptions.
+- Platform icons are just emojis for now.
+- Should use local storage or IndexedDB
+- Unnecessarily exposes endpoints from Hono, missing quality tests
 
 ## Business Strategy
 

@@ -42,7 +42,12 @@ app.use(async (c: Context, next) => {
   csrf({
     origin: c.env.ORIGIN,
   });
-  secureHeaders();
+  secureHeaders({
+    contentSecurityPolicy: {
+      scriptSrc: c.env.ORIGIN,
+      upgradeInsecureRequests: [],
+    },
+  });
   return await next();
 });
 
